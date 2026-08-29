@@ -15,15 +15,87 @@ export async function GET() {
   }
 }
 
-// POST: Tạo sản phẩm mới
+// POST: Tạo sản phẩm mới hoặc Xử lý Import Hàng Loạt (nếu gửi lên dạng mảng)
 export async function POST(request) {
   try {
     const body = await request.json();
-    
-    // Bóc tách và loại bỏ id (vì khi tạo mới id phải để tự động tăng)
-    const { id, ...restBody } = body;
 
-    // Tự động sinh slug
+    // KIỂM TRA NẾU LÀ IMPORT HÀNG LOẠT (DẠNG MẢNG)
+    if (Array.isArray(body)) {
+      let successCount = 0;
+      let errorCount = 0;
+
+      for (const item of body) {
+        try {
+          if (!item.code || !item.name) continue;
+
+          const slug = item.slug ? generateSlug(item.slug) : generateSlug(item.name);
+          const priceStr = item.price !== undefined && item.price !== null ? String(item.price) : "0";
+
+          // Chuẩn bị danh mục nếu có truyền vào (dạng chuỗi ID ngăn cách bởi dấu phẩy hoặc mảng số)
+          let catConnect = [];
+          if (item.categoryIds) {
+            if (Array.isArray(item.categoryIds)) {
+              catConnect = item.categoryIds.map((id) => ({ id: Number(id) }));
+            } else if (typeof item.categoryIds === 'string') {
+              catConnect = item.categoryIds.split(',').map(id => ({ id: Number(id.trim()) })).filter(c => !isNaN(c.id));
+            }
+          }
+
+          // Kiểm tra xem mã sản phẩm (code) đã tồn tại chưa để Upsert thủ công chính xác
+          const existing = await prisma.product.findUnique({
+            where: { code: String(item.code) },
+          });
+
+          if (existing) {
+            // Cập nhật nếu đã có code
+            await prisma.product.update({
+              where: { code: String(item.code) },
+              data: {
+                name: item.name,
+                slug: slug,
+                price: priceStr,
+                description: item.description || null,
+                image: item.image || null,
+                isVisible: item.isVisible !== undefined ? Boolean(item.isVisible) : true,
+                isBestSeller: Boolean(item.isBestSeller),
+                isGift: Boolean(item.isGift),
+                ...(catConnect.length > 0 && {
+                  categories: { set: catConnect }
+                }),
+              },
+            });
+          } else {
+            // Tạo mới nếu chưa có code
+            await prisma.product.create({
+              data: {
+                code: String(item.code),
+                name: item.name,
+                slug: slug,
+                price: priceStr,
+                description: item.description || null,
+                image: item.image || null,
+                isVisible: item.isVisible !== undefined ? Boolean(item.isVisible) : true,
+                isBestSeller: Boolean(item.isBestSeller),
+                isGift: Boolean(item.isGift),
+                categories: {
+                  connect: catConnect,
+                },
+              },
+            });
+          }
+          successCount++;
+        } catch (err) {
+          console.error("Lỗi khi import dòng:", item.code, err);
+          errorCount++;
+        }
+      }
+
+      return NextResponse.json({ success: true, successCount, errorCount }, { status: 200 });
+    }
+
+    // XỬ LÝ POST THÔNG THƯỜNG (1 SẢN PHẨM)
+    const { id, ...restBody } = body;
     const slug = restBody.slug ? generateSlug(restBody.slug) : generateSlug(restBody.name);
 
     const newProduct = await prisma.product.create({
@@ -51,7 +123,7 @@ export async function POST(request) {
   }
 }
 
-// PUT: Cập nhật sản phẩm (BẮT BUỘC CÓ ĐỂ SỬA SẢN PHẨM)
+// PUT: Cập nhật sản phẩm
 export async function PUT(request) {
   try {
     const body = await request.json();
@@ -60,7 +132,6 @@ export async function PUT(request) {
       return NextResponse.json({ error: 'Thiếu ID sản phẩm cần cập nhật' }, { status: 400 });
     }
 
-    // Tự động sinh lại slug khi cập nhật (hoặc giữ theo tên/slug mới)
     const slug = body.slug ? generateSlug(body.slug) : generateSlug(body.name);
 
     const updatedProduct = await prisma.product.update({
@@ -68,14 +139,13 @@ export async function PUT(request) {
       data: {
         code: body.code,
         name: body.name,
-        slug: slug, // Cập nhật lại trường slug trong database
-        price: Number(body.price),
+        slug: slug,
+        price: String(body.price),
         description: body.description || null,
         isVisible: body.isVisible !== undefined ? Boolean(body.isVisible) : true,
         image: body.image || null,
         isBestSeller: Boolean(body.isBestSeller),
         isGift: Boolean(body.isGift),
-        // Dùng 'set' để ghi đè danh mục mới khi cập nhật sản phẩm
         categories: {
           set: (body.categoryIds || []).map((id) => ({ id: Number(id) })),
         },

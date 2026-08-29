@@ -1,7 +1,8 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { generateSlug } from '@/lib/slugify';
+import * as XLSX from 'xlsx';
 
 export default function AdminProductsPage() {
   const [products, setProducts] = useState([]);
@@ -9,14 +10,15 @@ export default function AdminProductsPage() {
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [uploading, setUploading] = useState(false);
+  const [importing, setImporting] = useState(false);
   
-  // Trạng thái kiểm soát việc người dùng có tự ý sửa slug thủ công hay không
+  const fileInputRef = useRef(null);
   const [isManualSlug, setIsManualSlug] = useState(false);
 
   const initialForm = {
     id: null,
     code: '',
-    slug: '', // Thêm trường slug
+    slug: '',
     name: '',
     price: '',
     description: '',
@@ -50,7 +52,6 @@ export default function AdminProductsPage() {
     }
   };
 
-  // Xử lý khi gõ Tên Sản Phẩm -> Tự động sinh Slug nếu chưa sửa thủ công
   const handleNameChange = (e) => {
     const newName = e.target.value;
     setFormData((prev) => ({
@@ -60,7 +61,6 @@ export default function AdminProductsPage() {
     }));
   };
 
-  // Xử lý khi người dùng chủ động sửa Slug
   const handleSlugChange = (e) => {
     setIsManualSlug(true);
     setFormData((prev) => ({ ...prev, slug: e.target.value }));
@@ -95,8 +95,6 @@ export default function AdminProductsPage() {
     setSubmitting(true);
 
     const method = formData.id ? 'PUT' : 'POST';
-
-    // Đảm bảo slug luôn có giá trị (nếu bỏ trống tự động tạo từ tên)
     const finalSlug = formData.slug ? generateSlug(formData.slug) : generateSlug(formData.name);
 
     const payload = {
@@ -129,7 +127,7 @@ export default function AdminProductsPage() {
 
   const handleEdit = (item) => {
     const catIds = item.categories ? item.categories.map((c) => c.id) : [];
-    setIsManualSlug(true); // Khi sửa sản phẩm cũ, bật cờ manual để không tự ghi đè slug cũ
+    setIsManualSlug(true);
     setFormData({
       ...item,
       slug: item.slug || '',
@@ -158,9 +156,140 @@ export default function AdminProductsPage() {
     });
   };
 
+  // --- TÍNH NĂNG EXPORT EXCEL ---
+  const handleExportExcel = () => {
+    const dataFormatted = products.map((p) => ({
+      'Mã SP (Key)': p.code,
+      'Tên Sản Phẩm': p.name,
+      'Slug': p.slug,
+      'Giá Bán': p.price,
+      'Đường Dẫn Ảnh': p.image || '',
+      'Mã Danh Mục (ID, cách nhau bởi dấu phẩy)': p.categories ? p.categories.map(c => c.id).join(',') : '',
+      'Mô Tả': p.description || '',
+      'Hiển Thị (TRUE/FALSE)': p.isVisible ? 'TRUE' : 'FALSE',
+      'Bán Chạy (TRUE/FALSE)': p.isBestSeller ? 'TRUE' : 'FALSE',
+      'Quà Tặng (TRUE/FALSE)': p.isGift ? 'TRUE' : 'FALSE',
+    }));
+
+    const worksheet = XLSX.utils.json_to_sheet(dataFormatted);
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, 'DanhSachSanPham');
+    XLSX.writeFile(workbook, 'Danh_Sach_SanPham.xlsx');
+  };
+
+  // --- TẢI FILE MẪU EXCEL ---
+  const handleDownloadTemplate = () => {
+    const templateData = [
+      {
+        'Mã SP (Key)': 'SP001',
+        'Tên Sản Phẩm': 'Trà Oolong Mẫu',
+        'Slug': 'tra-oolong-mau',
+        'Giá Bán': 150000,
+        'Đường Dẫn Ảnh': '/uploads/ten-anh.jpg',
+        'Mã Danh Mục (ID, cách nhau bởi dấu phẩy)': '1',
+        'Mô Tả': 'Mô tả mẫu cho sản phẩm',
+        'Hiển Thị (TRUE/FALSE)': 'TRUE',
+        'Bán Chạy (TRUE/FALSE)': 'FALSE',
+        'Quà Tặng (TRUE/FALSE)': 'FALSE',
+      }
+    ];
+
+    const worksheet = XLSX.utils.json_to_sheet(templateData);
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, 'Template');
+    XLSX.writeFile(workbook, 'File_Mau_Nhap_SanPham.xlsx');
+  };
+
+  // --- TÍNH NĂNG IMPORT EXCEL ---
+  const handleImportExcel = (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = async (evt) => {
+      try {
+        setImporting(true);
+        const bstr = evt.target.result;
+        const workbook = XLSX.read(bstr, { type: 'binary' });
+        const wsname = workbook.SheetNames[0];
+        const ws = workbook.Sheets[wsname];
+        const data = XLSX.utils.sheet_to_json(ws);
+
+        // Ánh xạ lại cấu trúc dữ liệu gửi lên API
+        const formattedData = data.map((row) => ({
+          code: String(row['Mã SP (Key)'] || '').trim(),
+          name: row['Tên Sản Phẩm'],
+          slug: row['Slug'],
+          price: row['Giá Bán'],
+          image: row['Đường Dẫn Ảnh'],
+          categoryIds: row['Mã Danh Mục (ID, cách nhau bởi dấu phẩy)'],
+          description: row['Mô Tả'],
+          isVisible: String(row['Hiển Thị (TRUE/FALSE)'] || '').toUpperCase() !== 'FALSE',
+          isBestSeller: String(row['Bán Chạy (TRUE/FALSE)'] || '').toUpperCase() === 'TRUE',
+          isGift: String(row['Quà Tặng (TRUE/FALSE)'] || '').toUpperCase() === 'TRUE',
+        })).filter(item => item.code && item.name);
+
+        if (formattedData.length === 0) {
+          alert('File Excel không có dữ liệu hợp lệ (cần có Mã SP và Tên Sản Phẩm)!');
+          return;
+        }
+
+        const res = await fetch('/api/products', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(formattedData),
+        });
+
+        const result = await res.json();
+        if (res.ok) {
+          alert(`Import thành công! Thêm/Cập nhật thành công ${result.successCount} sản phẩm.`);
+          fetchData();
+        } else {
+          alert('Có lỗi xảy ra khi import!');
+        }
+      } catch (error) {
+        console.error(error);
+        alert('Lỗi đọc file Excel!');
+      } finally {
+        setImporting(false);
+        if (fileInputRef.current) fileInputRef.current.value = '';
+      }
+    };
+    reader.readAsBinaryString(file);
+  };
+
   return (
     <div>
-      <h1 className="text-2xl font-bold mb-6 text-[#003B46] uppercase">Quản Lý Sản Phẩm</h1>
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
+        <h1 className="text-2xl font-bold text-[#003B46] uppercase">Quản Lý Sản Phẩm</h1>
+        
+        {/* KHU VỰC NÚT EXCEL */}
+        <div className="flex flex-wrap gap-2">
+          <button
+            onClick={handleDownloadTemplate}
+            className="bg-gray-100 text-gray-700 border px-3 py-2 rounded-xl text-xs font-bold hover:bg-gray-200"
+          >
+            📥 Tải File Mẫu
+          </button>
+          <button
+            onClick={handleExportExcel}
+            className="bg-emerald-50 text-emerald-700 border border-emerald-200 px-3 py-2 rounded-xl text-xs font-bold hover:bg-emerald-100"
+          >
+            📊 Xuất Excel
+          </button>
+          <label className="bg-blue-600 text-white px-3 py-2 rounded-xl text-xs font-bold cursor-pointer hover:bg-blue-700">
+            {importing ? 'Đang xử lý...' : '📤 Nhập Excel (Upsert)'}
+            <input
+              type="file"
+              accept=".xlsx, .xls"
+              ref={fileInputRef}
+              className="hidden"
+              onChange={handleImportExcel}
+              disabled={importing}
+            />
+          </label>
+        </div>
+      </div>
 
       {/* FORM THÊM / SỬA SẢN PHẨM */}
       <div className="bg-white p-6 rounded-2xl shadow-sm mb-8 border border-gray-100">
@@ -170,7 +299,7 @@ export default function AdminProductsPage() {
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <label className="block text-xs font-bold text-gray-600 mb-1">Mã Sản Phẩm (*)</label>
+              <label className="block text-xs font-bold text-gray-600 mb-1">Mã Sản Phẩm (*) (Key chính)</label>
               <input
                 type="text"
                 required
@@ -193,7 +322,6 @@ export default function AdminProductsPage() {
             </div>
           </div>
 
-          {/* Ô nhập Slug tự động sinh từ Tên */}
           <div>
             <label className="block text-xs font-bold text-gray-600 mb-1">Đường dẫn thân thiện (Slug URL)</label>
             <input
@@ -232,7 +360,7 @@ export default function AdminProductsPage() {
                       onChange={() => handleCategoryCheckboxChange(cat.id)}
                       className="rounded border-gray-300 text-[#003B46] focus:ring-[#003B46]"
                     />
-                    {cat.name}
+                    {cat.name} ({cat.id})
                   </label>
                 ))}
               </div>
@@ -254,6 +382,9 @@ export default function AdminProductsPage() {
                 <input type="file" accept="image/*" className="hidden" onChange={handleImageUpload} />
               </label>
             </div>
+            <span className="text-[10px] text-gray-400 mt-1 block">
+              Gợi ý: Upload ảnh vào thư mục <code>public/uploads/</code> rồi điền tên dạng <code>/uploads/ten-anh.jpg</code> để dùng cho file Excel.
+            </span>
           </div>
 
           <div>
@@ -361,7 +492,7 @@ export default function AdminProductsPage() {
                       <td className="p-3 font-bold text-emerald-600">{item.price}</td>
                       <td className="p-3 text-gray-500">
                         {item.categories && item.categories.length > 0
-                          ? item.categories.map((c) => c.name).join(', ')
+                          ? item.categories.map((c) => `${c.name} (ID:${c.id})`).join(', ')
                           : '---'}
                       </td>
                       <td className="p-3 text-right space-x-2">

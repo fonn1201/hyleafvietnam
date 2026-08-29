@@ -19,7 +19,7 @@ export default function Footer() {
   }, []);
 
   return (
-    <footer className="bg-gray-900 text-gray-300 pt-12 pb-8 border-t border-gray-800">
+    <footer className="bg-[#12412C] text-[#FFFBF3] pt-12 pb-8 border-t border-gray-800">
       <div className="max-w-6xl mx-auto px-4 grid grid-cols-1 md:grid-cols-3 gap-8 mb-8">
         <div>
           <h3 className="text-xl font-bold text-white mb-3">{settings.siteName}</h3>
@@ -40,10 +40,10 @@ export default function Footer() {
         <div>
           <h4 className="text-sm font-bold text-white uppercase tracking-wider mb-3">Tư Vấn & Hỗ Trợ</h4>
           <div className="space-y-2">
-            <a href={settings.zaloUrl} target="_blank" rel="noreferrer" className="block w-full bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs py-2 px-4 rounded text-center transition">
+            <a href={settings.zaloUrl} target="_blank" rel="noreferrer" className="block w-full bg-[#FFFBF3] hover:bg-[#E1E8C2] text-[#12412C] font-bold text-xs py-2 px-4 rounded text-center transition">
               Nhắn Tin Qua Zalo
             </a>
-            <a href={settings.fanpage} target="_blank" rel="noreferrer" className="block w-full bg-gray-800 hover:bg-gray-700 text-white font-bold text-xs py-2 px-4 rounded text-center transition">
+            <a href={settings.fanpage} target="_blank" rel="noreferrer" className="block w-full bg-[#FFFBF3] hover:bg-[#E1E8C2] text-[#12412C] font-bold text-xs py-2 px-4 rounded text-center transition">
               Theo Dõi Fanpage Facebook
             </a>
           </div>

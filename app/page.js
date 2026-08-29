@@ -30,7 +30,7 @@ export default async function HomePage() {
         {/* KHỐI HERO BANNER */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
           {/* Cột 1: Danh Mục Trà */}
-          <div className="md:col-span-1 bg-white rounded-2xl p-5 border border-[#12412C]/10 shadow-sm h-full">
+          <div className="md:col-span-1 hidden md:block bg-white rounded-2xl p-5 border border-[#12412C]/10 shadow-sm h-full">
             <h2 className="font-black text-[#12412C] uppercase text-xs tracking-wider mb-4 pb-2 border-b border-[#12412C]/10 flex items-center gap-2">
               📋 DANH MỤC TRÀ
             </h2>

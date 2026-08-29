@@ -1,14 +1,18 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
+import { useRouter, usePathname } from 'next/navigation';
 
 export default function Header() {
   const [categories, setCategories] = useState([]);
   const [searchQuery, setSearchQuery] = useState('');
+  const [suggestions, setSuggestions] = useState([]);
+  const [isOpen, setIsOpen] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const searchRef = useRef(null);
   const router = useRouter();
+  const pathname = usePathname();
 
   useEffect(() => {
     fetch('/api/categories')
@@ -16,9 +20,66 @@ export default function Header() {
       .then((d) => Array.isArray(d) && setCategories(d));
   }, []);
 
-  const handleSearch = (e) => {
+  // Tự động xóa trắng từ khóa, đóng gợi ý và đóng menu mobile mỗi khi chuyển trang
+  useEffect(() => {
+    setSearchQuery('');
+    setSuggestions([]);
+    setIsOpen(false);
+    setIsMobileMenuOpen(false);
+  }, [pathname]);
+
+  // Lọc danh sách gợi ý khi gõ từ khóa
+  useEffect(() => {
+    const fetchSuggestions = async () => {
+      if (!searchQuery.trim()) {
+        setSuggestions([]);
+        setIsOpen(false);
+        return;
+      }
+
+      try {
+        const res = await fetch('/api/products');
+        const products = await res.json();
+        const term = searchQuery.trim();
+
+        const removeAccents = (str) => {
+          return str.normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/đ/g, 'd').replace(/Đ/g, 'D');
+        };
+        const normalizedTerm = removeAccents(term).toLowerCase();
+
+        // Lọc theo tên có dấu (hoặc không dấu tùy ý) và mã sản phẩm
+        const filtered = products.filter((p) => {
+          const matchName = p.name && removeAccents(p.name).toLowerCase().includes(normalizedTerm);
+          const matchCode = p.code && p.code.toLowerCase().includes(term.toLowerCase());
+          return matchName || matchCode;
+        });
+
+        setSuggestions(filtered);
+        setIsOpen(true);
+      } catch (error) {
+        console.error('Lỗi gợi ý tìm kiếm:', error);
+      }
+    };
+
+    const delayDebounce = setTimeout(fetchSuggestions, 300);
+    return () => clearTimeout(delayDebounce);
+  }, [searchQuery]);
+
+  // Đóng hộp gợi ý khi click ra ngoài
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (searchRef.current && !searchRef.current.contains(event.target)) {
+        setIsOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  const handleSearchSubmit = (e) => {
     e.preventDefault();
     if (searchQuery.trim()) {
+      setIsOpen(false);
       router.push(`/products?search=${encodeURIComponent(searchQuery.trim())}`);
     }
   };
@@ -35,24 +96,67 @@ export default function Header() {
                 className="h-12 md:h-14 w-auto object-contain transition-transform group-hover:scale-105" 
               />
             </Link>
-            <button onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)} className="md:hidden p-2 text-[#FFFBF3]">
-              ☰
+            <button 
+              onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)} 
+              className="md:hidden p-2 text-[#FFFBF3] text-xl focus:outline-none"
+              aria-label="Menu"
+            >
+              {isMobileMenuOpen ? '✕' : '☰'}
             </button>
           </div>
 
           <div className="hidden md:flex md:col-span-3 items-center justify-between gap-4">
-            <form onSubmit={handleSearch} className="relative flex-1 max-w-xs">
-              <input
-                type="text"
-                placeholder="Tìm kiếm trà..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full bg-[#FFFBF3] text-[#12412C] placeholder-gray-500 text-xs rounded-full py-2 pl-4 pr-9 focus:outline-none focus:ring-2 focus:ring-amber-300"
-              />
-              <button type="submit" className="absolute right-3 top-1/2 -translate-y-1/2 text-[#12412C]">
-                🔍
-              </button>
-            </form>
+            {/* Thanh tìm kiếm có khung gợi ý */}
+            <div className="relative flex-1 max-w-xs" ref={searchRef}>
+              <form onSubmit={handleSearchSubmit} className="relative">
+                <input
+                  type="text"
+                  placeholder="Tìm kiếm sản phẩm"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  onFocus={() => {
+                    if (searchQuery.trim() && suggestions.length > 0) setIsOpen(true);
+                  }}
+                  className="w-full bg-[#FFFBF3] text-[#12412C] placeholder-gray-500 text-xs rounded-full py-2 pl-4 pr-9 focus:outline-none focus:ring-2 focus:ring-amber-300"
+                />
+                <button type="submit" className="absolute right-3 top-1/2 -translate-y-1/2 text-[#12412C]">
+                  🔍
+                </button>
+              </form>
+
+              {/* Khung gợi ý sản phẩm hiển thị phía dưới */}
+              {isOpen && suggestions.length > 0 && (
+                <div className="absolute left-0 right-0 mt-2 bg-[#FFFBF3] text-[#12412C] rounded-xl shadow-2xl border border-[#12412C]/10 max-h-80 overflow-y-auto z-50">
+                  {suggestions.map((product) => (
+                    <Link
+                      key={product.id}
+                      href={`/products/${product.slug}`}
+                      onClick={() => setIsOpen(false)}
+                      className="flex items-center gap-3 px-3.5 py-2.5 hover:bg-amber-100/60 border-b border-gray-100 last:border-none transition"
+                    >
+                      {product.image ? (
+                        <img src={product.image} alt={product.name} className="w-10 h-10 object-cover rounded-lg flex-shrink-0" />
+                      ) : (
+                        <div className="w-10 h-10 bg-gray-200 rounded-lg flex items-center justify-center text-[10px] text-gray-500 flex-shrink-0">Ảnh</div>
+                      )}
+                      <div className="overflow-hidden">
+                        <p className="text-xs font-bold text-[#12412C] truncate">{product.name}</p>
+                        <p className="text-[11px] text-amber-800 font-semibold">
+                          Mã: {product.code} - {Number(product.price).toLocaleString('vi-VN')} đ
+                        </p>
+                      </div>
+                    </Link>
+                  ))}
+                </div>
+              )}
+
+              {/* Thông báo khi không tìm thấy */}
+              {isOpen && searchQuery.trim() !== '' && suggestions.length === 0 && (
+                <div className="absolute left-0 right-0 mt-2 bg-[#FFFBF3] text-[#12412C] rounded-xl shadow-2xl border border-[#12412C]/10 p-3 text-center text-xs text-gray-600 z-50">
+                  Không tìm thấy sản phẩm phù hợp
+                </div>
+              )}
+            </div>
 
             <nav className="flex items-center space-x-5 text-xs font-bold uppercase tracking-wider">
               <Link href="/" className="hover:text-amber-200 transition">Trang Chủ</Link>
@@ -78,6 +182,43 @@ export default function Header() {
             </a>
           </div>
         </div>
+
+        {/* Mobile Dropdown Menu (Hiển thị khi bấm icon ☰) */}
+        {isMobileMenuOpen && (
+          <div className="md:hidden mt-3 pt-3 border-t border-[#FFFBF3]/20 flex flex-col gap-3 pb-2">
+            {/* Thanh tìm kiếm trên mobile */}
+            <form onSubmit={handleSearchSubmit} className="relative">
+              <input
+                type="text"
+                placeholder="Tìm kiếm sản phẩm"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="w-full bg-[#FFFBF3] text-[#12412C] placeholder-gray-500 text-xs rounded-full py-2 pl-4 pr-9 focus:outline-none"
+              />
+              <button type="submit" className="absolute right-3 top-1/2 -translate-y-1/2 text-[#12412C]">
+                🔍
+              </button>
+            </form>
+
+            <Link href="/" className="text-xs font-bold uppercase py-1 hover:text-amber-200">Trang Chủ</Link>
+            <Link href="/products" className="text-xs font-bold uppercase py-1 hover:text-amber-200">Tất Cả Sản Phẩm</Link>
+            
+            {/* Danh mục trên mobile */}
+            {categories.map((cat) => (
+              <Link key={cat.slug} href={`/categories/${cat.slug}`} className="text-xs pl-3 py-1 text-amber-200 hover:text-white">
+                - {cat.name}
+              </Link>
+            ))}
+
+            <Link href="/news" className="text-xs font-bold uppercase py-1 hover:text-amber-200">Tin Tức Shop</Link>
+            <Link href="/posts" className="text-xs font-bold uppercase py-1 hover:text-amber-200">Góc Thưởng Trà</Link>
+            <Link href="/#about" className="text-xs font-bold uppercase py-1 hover:text-amber-200">Giới Thiệu</Link>
+
+            <a href="https://zalo.me" target="_blank" rel="noreferrer" className="hidden md:block bg-[#FFFBF3] text-[#12412C] font-bold text-xs px-4 py-2 rounded-full text-center shadow mt-1">
+              💬 Chat Zalo
+            </a>
+          </div>
+        )}
       </div>
     </header>
   );

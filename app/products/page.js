@@ -6,26 +6,30 @@ export default async function ProductsPage({ searchParams }) {
   const params = await searchParams;
   const search = params?.search || "";
 
-  // Tạo điều kiện lọc sản phẩm chỉ hiển thị (isVisible = true)
-  const whereClause = {
-    isVisible: true,
+  // Hàm hỗ trợ bỏ dấu tiếng Việt
+  const removeAccents = (str) => {
+    return str.normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/đ/g, 'd').replace(/Đ/g, 'D');
   };
 
-  if (search) {
-    whereClause.OR = [
-      { name: { contains: search } },
-      { code: { contains: search } },
-    ];
-  }
-
-  // Fetch song song sản phẩm và cài đặt
-  const [products, setting] = await Promise.all([
+  // Fetch song song danh sách sản phẩm hiển thị và cài đặt
+  const [allProducts, setting] = await Promise.all([
     prisma.product.findMany({
-      where: whereClause,
+      where: { isVisible: true },
       orderBy: { createdAt: "desc" },
     }),
     prisma.setting.findUnique({ where: { id: 1 } })
   ]);
+
+  // Lọc sản phẩm hỗ trợ tìm kiếm không dấu và theo mã sản phẩm
+  const term = search.trim();
+  const normalizedQuery = removeAccents(term).toLowerCase();
+
+  const products = allProducts.filter((p) => {
+    if (!term) return true;
+    const matchName = p.name && removeAccents(p.name).toLowerCase().includes(normalizedQuery);
+    const matchCode = p.code && p.code.toLowerCase().includes(term.toLowerCase());
+    return matchName || matchCode;
+  });
 
   const isOnlineSales = setting?.isOnlineSales ?? false;
 
