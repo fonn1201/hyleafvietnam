@@ -1,0 +1,78 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = "file:./dev.db"
+}
+
+model Product {
+  id           Int        @id @default(autoincrement())
+  code         String     @unique
+  slug         String?    @unique // Thêm trường slug này
+  name         String
+  price        String
+  description  String?
+  isVisible    Boolean    @default(true)
+  image        String?
+  isBestSeller Boolean    @default(false) // Tích chọn hiển thị khối Bán Chạy
+  isGift       Boolean    @default(false) // Tích chọn hiển thị khối Quà Tặng
+  categories   Category[]
+  createdAt    DateTime   @default(now())
+}
+
+model Category {
+  id          Int       @id @default(autoincrement())
+  name        String    @unique
+  slug        String?   @unique // Thêm trường slug
+  description String?   // Thêm trường mô tả
+  products    Product[]
+}
+
+model Setting {
+  id            Int      @id @default(1)
+  siteName      String   @default("HYLEAF")
+  hotline       String   @default("")
+  zaloUrl       String   @default("")
+  fanpage       String   @default("")
+  address       String   @default("")
+  aboutUs       String   @default("")
+  isOnlineSales Boolean  @default(false) // Tùy chọn Mở bán online
+  updatedAt     DateTime @updatedAt
+}
+
+model Post {
+  id        Int      @id @default(autoincrement())
+  title     String
+  slug      String   @unique
+  excerpt   String?
+  content   String
+  image     String?
+  published Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model News {
+  id        Int      @id @default(autoincrement())
+  title     String
+  slug      String   @unique
+  summary   String?
+  content   String
+  image     String?
+  source    String?
+  published Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Slide {
+  id        Int      @id @default(autoincrement())
+  image     String   // Đường dẫn ảnh banner
+  title     String?  // Tiêu đề hiển thị trên banner (tùy chọn)
+  link      String?  @default("/products") // Link đích khi bấm vào slide
+  order     Int      @default(0) // Thứ tự ưu tiên hiển thị (1, 2, 3...)
+  active    Boolean  @default(true) // Trạng thái Bật/Tắt slide
+  createdAt DateTime @default(now())
+}
