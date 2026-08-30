@@ -1,9 +1,11 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
+import WithPermission from '@/components/WithPermission';
 
 export default function AdminCategoriesPage() {
   const [categories, setCategories] = useState([]);
+  const [userPermissions, setUserPermissions] = useState([]);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
 
@@ -18,6 +20,7 @@ export default function AdminCategoriesPage() {
 
   useEffect(() => {
     fetchCategories();
+    fetchProfile();
   }, []);
 
   const fetchCategories = async () => {
@@ -29,6 +32,19 @@ export default function AdminCategoriesPage() {
       console.error(err);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchProfile = async () => {
+    try {
+      const res = await fetch('/api/admin/profile');
+      const data = await res.json();
+      const perms = typeof data.permissions === 'string'
+        ? data.permissions.split(',').map(p => p.trim())
+        : (data.permissions || []);
+      setUserPermissions(perms);
+    } catch (err) {
+      console.error(err);
     }
   };
 
@@ -99,100 +115,102 @@ export default function AdminCategoriesPage() {
   };
 
   return (
-    <div>
-      <h1 className="text-2xl font-bold mb-6 text-[#003B46] uppercase">Quản Lý Danh Mục Sản Phẩm</h1>
+    <WithPermission permission="categories" userPermissions={userPermissions}>
+      <div>
+        <h1 className="text-2xl font-bold mb-6 text-[#003B46] uppercase">Quản Lý Danh Mục Sản Phẩm</h1>
 
-      {/* FORM THÊM / SỬA DANH MỤC */}
-      <div className="bg-white p-6 rounded-2xl shadow-sm mb-8 border border-gray-100">
-        <h2 className="text-sm font-bold text-gray-700 mb-4">
-          {formData.id ? '✏️ CHỈNH SỬA DANH MỤC' : '➕ THÊM DANH MỤC MỚI'}
-        </h2>
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div>
-            <label className="block text-xs font-bold text-gray-600 mb-1">Tên Danh Mục (*)</label>
-            <input
-              type="text"
-              required
-              className="w-full p-2.5 border rounded-xl text-sm"
-              placeholder="Ví dụ: Trà Pha Chế, Trà Thưởng Thức..."
-              value={formData.name}
-              onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-            />
-          </div>
+        {/* FORM THÊM / SỬA DANH MỤC */}
+        <div className="bg-white p-6 rounded-2xl shadow-sm mb-8 border border-gray-100">
+          <h2 className="text-sm font-bold text-gray-700 mb-4">
+            {formData.id ? '✏️ CHỈNH SỬA DANH MỤC' : '➕ THÊM DANH MỤC MỚI'}
+          </h2>
+          <form onSubmit={handleSubmit} className="space-y-4">
+            <div>
+              <label className="block text-xs font-bold text-gray-600 mb-1">Tên Danh Mục (*)</label>
+              <input
+                type="text"
+                required
+                className="w-full p-2.5 border rounded-xl text-sm"
+                placeholder="Ví dụ: Trà Pha Chế, Trà Thưởng Thức..."
+                value={formData.name}
+                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+              />
+            </div>
 
-          <div>
-            <label className="block text-xs font-bold text-gray-600 mb-1">Mô Tả Danh Mục</label>
-            <textarea
-              rows={3}
-              className="w-full p-2.5 border rounded-xl text-sm"
-              placeholder="Mô tả danh mục sản phẩm..."
-              value={formData.description || ''}
-              onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-            />
-          </div>
+            <div>
+              <label className="block text-xs font-bold text-gray-600 mb-1">Mô Tả Danh Mục</label>
+              <textarea
+                rows={3}
+                className="w-full p-2.5 border rounded-xl text-sm"
+                placeholder="Mô tả danh mục sản phẩm..."
+                value={formData.description || ''}
+                onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+              />
+            </div>
 
-          <div className="flex gap-2">
-            <button
-              type="submit"
-              disabled={submitting}
-              className="bg-[#003B46] text-white px-6 py-2.5 rounded-xl text-xs font-bold hover:bg-opacity-90 disabled:opacity-50"
-            >
-              {submitting ? 'Đang lưu...' : formData.id ? 'Cập Nhật Danh Mục' : 'Tạo Danh Mục'}
-            </button>
-            {formData.id && (
+            <div className="flex gap-2">
               <button
-                type="button"
-                onClick={() => setFormData(initialForm)}
-                className="bg-gray-200 text-gray-700 px-4 py-2.5 rounded-xl text-xs font-bold hover:bg-gray-300"
+                type="submit"
+                disabled={submitting}
+                className="bg-[#003B46] text-white px-6 py-2.5 rounded-xl text-xs font-bold hover:bg-opacity-90 disabled:opacity-50"
               >
-                Hủy Chỉnh Sửa
+                {submitting ? 'Đang lưu...' : formData.id ? 'Cập Nhật Danh Mục' : 'Tạo Danh Mục'}
               </button>
-            )}
-          </div>
-        </form>
-      </div>
+              {formData.id && (
+                <button
+                  type="button"
+                  onClick={() => setFormData(initialForm)}
+                  className="bg-gray-200 text-gray-700 px-4 py-2.5 rounded-xl text-xs font-bold hover:bg-gray-300"
+                >
+                  Hủy Chỉnh Sửa
+                </button>
+              )}
+            </div>
+          </form>
+        </div>
 
-      {/* DANH SÁCH DANH MỤC */}
-      <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
-        <h2 className="text-sm font-bold text-gray-700 mb-4">DANH SÁCH DANH MỤC ({categories.length})</h2>
-        {loading ? (
-          <p className="text-xs text-gray-400">Đang tải dữ liệu...</p>
-        ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full text-left text-xs">
-              <thead>
-                <tr className="border-b bg-gray-50 text-gray-600">
-                  <th className="p-3">ID</th>
-                  <th className="p-3">TÊN DANH MỤC</th>
-                  <th className="p-3">SLUG</th>
-                  <th className="p-3">MÔ TẢ</th>
-                  <th className="p-3 text-right">THAO TÁC</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y">
-                {categories.length === 0 ? (
-                  <tr>
-                    <td colSpan={5} className="p-4 text-center text-gray-400">Chưa có danh mục nào</td>
+        {/* DANH SÁCH DANH MỤC */}
+        <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
+          <h2 className="text-sm font-bold text-gray-700 mb-4">DANH SÁCH DANH MỤC ({categories.length})</h2>
+          {loading ? (
+            <p className="text-xs text-gray-400">Đang tải dữ liệu...</p>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="w-full text-left text-xs">
+                <thead>
+                  <tr className="border-b bg-gray-50 text-gray-600">
+                    <th className="p-3">ID</th>
+                    <th className="p-3">TÊN DANH MỤC</th>
+                    <th className="p-3">SLUG</th>
+                    <th className="p-3">MÔ TẢ</th>
+                    <th className="p-3 text-right">THAO TÁC</th>
                   </tr>
-                ) : (
-                  categories.map((item) => (
-                    <tr key={item.id} className="hover:bg-gray-50">
-                      <td className="p-3 font-mono text-gray-400">#{item.id}</td>
-                      <td className="p-3 font-bold text-gray-800">{item.name}</td>
-                      <td className="p-3 text-gray-500 font-mono">{item.slug}</td>
-                      <td className="p-3 text-gray-500">{item.description || '---'}</td>
-                      <td className="p-3 text-right space-x-2">
-                        <button onClick={() => handleEdit(item)} className="text-blue-600 font-bold hover:underline">Sửa</button>
-                        <button onClick={() => handleDelete(item.id)} className="text-red-600 font-bold hover:underline">Xóa</button>
-                      </td>
+                </thead>
+                <tbody className="divide-y">
+                  {categories.length === 0 ? (
+                    <tr>
+                      <td colSpan={5} className="p-4 text-center text-gray-400">Chưa có danh mục nào</td>
                     </tr>
-                  ))
-                )}
-              </tbody>
-            </table>
-          </div>
-        )}
+                  ) : (
+                    categories.map((item) => (
+                      <tr key={item.id} className="hover:bg-gray-50">
+                        <td className="p-3 font-mono text-gray-400">#{item.id}</td>
+                        <td className="p-3 font-bold text-gray-800">{item.name}</td>
+                        <td className="p-3 text-gray-500 font-mono">{item.slug}</td>
+                        <td className="p-3 text-gray-500">{item.description || '---'}</td>
+                        <td className="p-3 text-right space-x-2">
+                          <button onClick={() => handleEdit(item)} className="text-blue-600 font-bold hover:underline">Sửa</button>
+                          <button onClick={() => handleDelete(item.id)} className="text-red-600 font-bold hover:underline">Xóa</button>
+                        </td>
+                      </tr>
+                    ))
+                  )}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </div>
       </div>
-    </div>
+    </WithPermission>
   );
 }

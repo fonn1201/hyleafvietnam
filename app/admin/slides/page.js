@@ -1,9 +1,11 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
+import WithPermission from '@/components/WithPermission';
 
 export default function AdminSlidesPage() {
   const [slides, setSlides] = useState([]);
+  const [userPermissions, setUserPermissions] = useState([]);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [uploading, setUploading] = useState(false);
@@ -20,14 +22,26 @@ export default function AdminSlidesPage() {
   const [formData, setFormData] = useState(initialForm);
 
   useEffect(() => {
-    fetchSlides();
+    fetchData();
   }, []);
 
-  const fetchSlides = async () => {
+  const fetchData = async () => {
     try {
-      const res = await fetch('/api/slides');
-      const data = await res.json();
-      setSlides(Array.isArray(data) ? data : []);
+      const [resSlides, resProfile] = await Promise.all([
+        fetch('/api/slides'),
+        fetch('/api/admin/profile'),
+      ]);
+
+      const dataSlides = await resSlides.json();
+      const dataProfile = await resProfile.json();
+
+      setSlides(Array.isArray(dataSlides) ? dataSlides : []);
+
+      const perms = typeof dataProfile.permissions === 'string'
+        ? dataProfile.permissions.split(',').map(p => p.trim())
+        : (dataProfile.permissions || []);
+      setUserPermissions(perms);
+
     } catch (err) {
       console.error(err);
     } finally {
@@ -81,7 +95,7 @@ export default function AdminSlidesPage() {
       if (res.ok) {
         alert(formData.id ? 'Cập nhật banner thành công!' : 'Tạo banner mới thành công!');
         setFormData(initialForm);
-        fetchSlides();
+        fetchData();
       } else {
         alert('Lỗi từ Server: ' + (data.error || data.message || res.statusText || 'Không rõ nguyên nhân'));
       }
@@ -109,7 +123,7 @@ export default function AdminSlidesPage() {
     try {
       const res = await fetch(`/api/slides?id=${id}`, { method: 'DELETE' });
       if (res.ok) {
-        fetchSlides();
+        fetchData();
       } else {
         alert('Không thể xóa banner này!');
       }
@@ -118,106 +132,108 @@ export default function AdminSlidesPage() {
     }
   };
 
+  if (loading) {
+    return <div className="p-6 text-gray-400">Đang tải dữ liệu và kiểm tra quyền...</div>;
+  }
+
   return (
-    <div>
-      <h1 className="text-2xl font-bold mb-6 text-[#003B46] uppercase">Quản Lý Slide Banner Trang Chủ</h1>
+    <WithPermission permission="slides" userPermissions={userPermissions}>
+      <div>
+        <h1 className="text-2xl font-bold mb-6 text-[#003B46] uppercase">Quản Lý Slide Banner Trang Chủ</h1>
 
-      {/* FORM THÊM / SỬA SLIDE BANNER */}
-      <div className="bg-white p-6 rounded-2xl shadow-sm mb-8 border border-gray-100">
-        <h2 className="text-sm font-bold text-gray-700 mb-4">
-          {formData.id ? '✏️ CHỈNH SỬA BANNER' : '➕ THÊM BANNER MỚI'}
-        </h2>
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        {/* FORM THÊM / SỬA SLIDE BANNER */}
+        <div className="bg-white p-6 rounded-2xl shadow-sm mb-8 border border-gray-100">
+          <h2 className="text-sm font-bold text-gray-700 mb-4">
+            {formData.id ? '✏️ CHỈNH SỬA BANNER' : '➕ THÊM BANNER MỚI'}
+          </h2>
+          <form onSubmit={handleSubmit} className="space-y-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-xs font-bold text-gray-600 mb-1">Tiêu Đề Banner (Title - Tùy chọn)</label>
+                <input
+                  type="text"
+                  className="w-full p-2.5 border rounded-xl text-sm"
+                  placeholder="Ví dụ: Hương Vị Trà Việt Thượng Hạng..."
+                  value={formData.title}
+                  onChange={(e) => setFormData({ ...formData, title: e.target.value })}
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-bold text-gray-600 mb-1">Thứ Tự Hiển Thị (Order)</label>
+                <input
+                  type="number"
+                  className="w-full p-2.5 border rounded-xl text-sm"
+                  value={formData.order}
+                  onChange={(e) => setFormData({ ...formData, order: parseInt(e.target.value) || 0 })}
+                />
+              </div>
+            </div>
+
             <div>
-              <label className="block text-xs font-bold text-gray-600 mb-1">Tiêu Đề Banner (Title - Tùy chọn)</label>
+              <label className="block text-xs font-bold text-gray-600 mb-1">Hình Ảnh Banner (*)</label>
+              <div className="flex gap-2 items-center">
+                <input
+                  type="text"
+                  required
+                  className="w-full p-2.5 border rounded-xl text-sm"
+                  placeholder="Đường dẫn ảnh (/uploads/... hoặc URL)"
+                  value={formData.image}
+                  onChange={(e) => setFormData({ ...formData, image: e.target.value })}
+                />
+                <label className="bg-blue-50 text-blue-600 border border-blue-200 px-4 py-2.5 rounded-xl text-xs font-bold cursor-pointer whitespace-nowrap hover:bg-blue-100">
+                  {uploading ? 'Đang tải...' : '📁 Chọn ảnh'}
+                  <input type="file" accept="image/*" className="hidden" onChange={handleImageUpload} />
+                </label>
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-xs font-bold text-gray-600 mb-1">Đường Dẫn Khi Click (Link)</label>
               <input
                 type="text"
                 className="w-full p-2.5 border rounded-xl text-sm"
-                placeholder="Ví dụ: Hương Vị Trà Việt Thượng Hạng..."
-                value={formData.title}
-                onChange={(e) => setFormData({ ...formData, title: e.target.value })}
+                placeholder="/products hoặc https://..."
+                value={formData.link}
+                onChange={(e) => setFormData({ ...formData, link: e.target.value })}
               />
             </div>
-            <div>
-              <label className="block text-xs font-bold text-gray-600 mb-1">Thứ Tự Hiển Thị (Order)</label>
-              <input
-                type="number"
-                className="w-full p-2.5 border rounded-xl text-sm"
-                value={formData.order}
-                onChange={(e) => setFormData({ ...formData, order: parseInt(e.target.value) || 0 })}
-              />
-            </div>
-          </div>
 
-          <div>
-            <label className="block text-xs font-bold text-gray-600 mb-1">Hình Ảnh Banner (*)</label>
-            <div className="flex gap-2 items-center">
+            <div className="flex items-center gap-2 pt-2">
               <input
-                type="text"
-                required
-                className="w-full p-2.5 border rounded-xl text-sm"
-                placeholder="Đường dẫn ảnh (/uploads/... hoặc URL)"
-                value={formData.image}
-                onChange={(e) => setFormData({ ...formData, image: e.target.value })}
+                type="checkbox"
+                id="active_slide"
+                checked={Boolean(formData.active)}
+                onChange={(e) => setFormData({ ...formData, active: e.target.checked })}
               />
-              <label className="bg-blue-50 text-blue-600 border border-blue-200 px-4 py-2.5 rounded-xl text-xs font-bold cursor-pointer whitespace-nowrap hover:bg-blue-100">
-                {uploading ? 'Đang tải...' : '📁 Chọn ảnh'}
-                <input type="file" accept="image/*" className="hidden" onChange={handleImageUpload} />
+              <label htmlFor="active_slide" className="text-xs font-bold text-gray-700 cursor-pointer">
+                Cho phép hiển thị banner này trên trang chủ
               </label>
             </div>
-          </div>
 
-          <div>
-            <label className="block text-xs font-bold text-gray-600 mb-1">Đường Dẫn Khi Click (Link)</label>
-            <input
-              type="text"
-              className="w-full p-2.5 border rounded-xl text-sm"
-              placeholder="/products hoặc https://..."
-              value={formData.link}
-              onChange={(e) => setFormData({ ...formData, link: e.target.value })}
-            />
-          </div>
-
-          <div className="flex items-center gap-2 pt-2">
-            <input
-              type="checkbox"
-              id="active_slide"
-              checked={Boolean(formData.active)}
-              onChange={(e) => setFormData({ ...formData, active: e.target.checked })}
-            />
-            <label htmlFor="active_slide" className="text-xs font-bold text-gray-700 cursor-pointer">
-              Cho phép hiển thị banner này trên trang chủ
-            </label>
-          </div>
-
-          <div className="flex gap-2 pt-4">
-            <button
-              type="submit"
-              disabled={submitting}
-              className="bg-[#003B46] text-white px-6 py-2.5 rounded-xl text-xs font-bold hover:bg-opacity-90 disabled:opacity-50"
-            >
-              {submitting ? 'Đang lưu...' : formData.id ? 'Cập Nhật Banner' : 'Tạo Banner Mới'}
-            </button>
-            {formData.id && (
+            <div className="flex gap-2 pt-4">
               <button
-                type="button"
-                onClick={() => setFormData(initialForm)}
-                className="bg-gray-200 text-gray-700 px-4 py-2.5 rounded-xl text-xs font-bold hover:bg-gray-300"
+                type="submit"
+                disabled={submitting}
+                className="bg-[#003B46] text-white px-6 py-2.5 rounded-xl text-xs font-bold hover:bg-opacity-90 disabled:opacity-50"
               >
-                Hủy Chỉnh Sửa
+                {submitting ? 'Đang lưu...' : formData.id ? 'Cập Nhật Banner' : 'Tạo Banner Mới'}
               </button>
-            )}
-          </div>
-        </form>
-      </div>
+              {formData.id && (
+                <button
+                  type="button"
+                  onClick={() => setFormData(initialForm)}
+                  className="bg-gray-200 text-gray-700 px-4 py-2.5 rounded-xl text-xs font-bold hover:bg-gray-300"
+                >
+                  Hủy Chỉnh Sửa
+                </button>
+              )}
+            </div>
+          </form>
+        </div>
 
-      {/* DANH SÁCH SLIDE BANNER */}
-      <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
-        <h2 className="text-sm font-bold text-gray-700 mb-4">DANH SÁCH SLIDE BANNER ({slides.length})</h2>
-        {loading ? (
-          <p className="text-xs text-gray-400">Đang tải dữ liệu...</p>
-        ) : (
+        {/* DANH SÁCH SLIDE BANNER */}
+        <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
+          <h2 className="text-sm font-bold text-gray-700 mb-4">DANH SÁCH SLIDE BANNER ({slides.length})</h2>
           <div className="overflow-x-auto">
             <table className="w-full text-left text-xs">
               <thead>
@@ -261,8 +277,8 @@ export default function AdminSlidesPage() {
               </tbody>
             </table>
           </div>
-        )}
+        </div>
       </div>
-    </div>
+    </WithPermission>
   );
 }
