@@ -1,14 +1,12 @@
 'use client';
 
 import React, { useState } from 'react';
-import { useRouter } from 'next/navigation';
 
 export default function AdminLogin() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [submitting, setSubmitting] = useState(false);
-  const router = useRouter();
 
   const handleLogin = async (e) => {
     e.preventDefault();
@@ -28,15 +26,16 @@ export default function AdminLogin() {
       } catch (e) {}
 
       if (res.ok) {
-        router.push('/admin');
-        router.refresh();
+        // Dùng window.location.href để ép trình duyệt tải lại hoàn toàn, 
+        // giúp cập nhật chính xác thông tin user mới đăng nhập ở thanh menu bên trái
+        window.location.href = '/admin';
       } else {
         setError(data.error || 'Đăng nhập thất bại, vui lòng kiểm tra lại thông tin!');
+        setSubmitting(false);
       }
     } catch (err) {
       console.error(err);
       setError('Lỗi kết nối mạng hoặc server không phản hồi!');
-    } finally {
       setSubmitting(false);
     }
   };
