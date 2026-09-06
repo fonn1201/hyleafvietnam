@@ -1,22 +1,21 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 
-// 1. GET: Lấy chi tiết sản phẩm (Hỗ trợ cả tìm theo ID số hoặc theo mã CODE chữ)
 // 1. GET: Lấy chi tiết sản phẩm theo slug, code hoặc id
 export async function GET(request, { params }) {
   try {
     const resolvedParams = await params;
-    const identifier = resolvedParams.id; // Vẫn giữ tên thư mục [id]
+    const identifier = resolvedParams.id;
 
     let product = null;
 
-    // Ưu tiên tìm theo slug trước (ví dụ: oolong-tu-quy)
+    // Ưu tiên tìm theo slug trước
     product = await prisma.product.findFirst({
       where: { slug: identifier },
       include: { categories: true },
     });
 
-    // Nếu không có slug, thử tìm theo code (như TEST3)
+    // Nếu không có slug, thử tìm theo code
     if (!product) {
       product = await prisma.product.findFirst({
         where: { code: identifier },
@@ -46,7 +45,7 @@ export async function GET(request, { params }) {
   }
 }
 
-// 2. PUT: Cập nhật sản phẩm (Giữ nguyên logic cũ của bạn)
+// 2. PUT: Cập nhật sản phẩm theo ID trên URL
 export async function PUT(request, { params }) {
   try {
     const resolvedParams = await params;
@@ -61,6 +60,7 @@ export async function PUT(request, { params }) {
       code,
       name,
       price,
+      stock, // Nhận thêm trường stock
       description,
       image,
       isVisible,
@@ -69,12 +69,15 @@ export async function PUT(request, { params }) {
       categoryIds,
     } = body;
 
+    const stockVal = stock !== undefined && stock !== null ? Number(stock) : 0;
+
     const updatedProduct = await prisma.product.update({
       where: { id },
       data: {
         code,
         name,
         price: String(price),
+        stock: isNaN(stockVal) ? 0 : stockVal, // Lưu tồn kho khi cập nhật qua route động ID
         description: description || '',
         image: image || '',
         isVisible: Boolean(isVisible),
@@ -96,7 +99,7 @@ export async function PUT(request, { params }) {
   }
 }
 
-// 3. DELETE: Xóa sản phẩm (Giữ nguyên logic cũ của bạn)
+// 3. DELETE: Xóa sản phẩm theo ID trên URL
 export async function DELETE(request, { params }) {
   try {
     const resolvedParams = await params;

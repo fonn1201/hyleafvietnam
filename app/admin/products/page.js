@@ -23,6 +23,7 @@ export default function AdminProductsPage() {
     slug: '',
     name: '',
     price: '',
+    stock: '', // Thêm trường quản lý tồn kho
     description: '',
     image: '',
     categoryIds: [],
@@ -42,7 +43,7 @@ export default function AdminProductsPage() {
       const [resProd, resCat, resProfile] = await Promise.all([
         fetch('/api/products'),
         fetch('/api/categories'),
-        fetch('/api/admin/profile'), // Lấy thông tin quyền của admin hiện tại
+        fetch('/api/admin/profile'),
       ]);
 
       const dataProd = await resProd.json();
@@ -52,7 +53,6 @@ export default function AdminProductsPage() {
       setProducts(Array.isArray(dataProd) ? dataProd : []);
       setCategories(Array.isArray(dataCat) ? dataCat : []);
 
-      // Xử lý chuyển đổi permissions từ chuỗi (hoặc mảng) sang mảng chuẩn
       const perms = typeof dataProfile.permissions === 'string'
         ? dataProfile.permissions.split(',').map(p => p.trim())
         : (dataProfile.permissions || []);
@@ -107,32 +107,39 @@ export default function AdminProductsPage() {
     e.preventDefault();
     setSubmitting(true);
 
-    const method = formData.id ? 'PUT' : 'POST';
+    const isEditing = Boolean(formData.id);
+    const method = isEditing ? 'PUT' : 'POST';
+    const endpoint = isEditing ? `/api/products/${formData.id}` : '/api/products';
+    
     const finalSlug = formData.slug ? generateSlug(formData.slug) : generateSlug(formData.name);
 
     const payload = {
       ...formData,
+      price: Number(formData.price) || 0,
+      stock: Number(formData.stock) || 0, // Đảm bảo stock là kiểu số
       slug: finalSlug,
       categoryIds: formData.categoryIds || [],
     };
 
     try {
-      const res = await fetch('/api/products', {
+      const res = await fetch(endpoint, {
         method,
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload),
       });
 
       if (res.ok) {
-        alert(formData.id ? 'Cập nhật thành công!' : 'Tạo mới sản phẩm thành công!');
+        alert(isEditing ? 'Cập nhật thành công!' : 'Tạo mới sản phẩm thành công!');
         setFormData(initialForm);
         setIsManualSlug(false);
         fetchData();
       } else {
-        alert('Có lỗi xảy ra!');
+        const errorData = await res.json().catch(() => ({}));
+        alert(errorData.message || 'Có lỗi xảy ra!');
       }
     } catch (err) {
       console.error(err);
+      alert('Lỗi kết nối đến máy chủ!');
     } finally {
       setSubmitting(false);
     }
@@ -143,6 +150,7 @@ export default function AdminProductsPage() {
     setIsManualSlug(true);
     setFormData({
       ...item,
+      stock: item.stock !== undefined && item.stock !== null ? item.stock : '',
       slug: item.slug || '',
       categoryIds: catIds,
     });
@@ -151,8 +159,12 @@ export default function AdminProductsPage() {
   const handleDelete = async (id) => {
     if (!confirm('Bạn có chắc chắn muốn xóa sản phẩm này?')) return;
     try {
-      const res = await fetch(`/api/products?id=${id}`, { method: 'DELETE' });
-      if (res.ok) fetchData();
+      const res = await fetch(`/api/products/${id}`, { method: 'DELETE' });
+      if (res.ok) {
+        fetchData();
+      } else {
+        alert('Xóa sản phẩm thất bại!');
+      }
     } catch (err) {
       console.error(err);
     }
@@ -169,13 +181,13 @@ export default function AdminProductsPage() {
     });
   };
 
-  // --- TÍNH NĂNG EXPORT EXCEL ---
   const handleExportExcel = () => {
     const dataFormatted = products.map((p) => ({
       'Mã SP (Key)': p.code,
       'Tên Sản Phẩm': p.name,
       'Slug': p.slug,
       'Giá Bán': p.price,
+      'Tồn Kho': p.stock ?? 0, // Xuất thông tin tồn kho ra Excel
       'Đường Dẫn Ảnh': p.image || '',
       'Mã Danh Mục (ID, cách nhau bởi dấu phẩy)': p.categories ? p.categories.map(c => c.id).join(',') : '',
       'Mô Tả': p.description || '',
@@ -190,7 +202,6 @@ export default function AdminProductsPage() {
     XLSX.writeFile(workbook, 'Danh_Sach_SanPham.xlsx');
   };
 
-  // --- TẢI FILE MẪU EXCEL ---
   const handleDownloadTemplate = () => {
     const templateData = [
       {
@@ -198,6 +209,7 @@ export default function AdminProductsPage() {
         'Tên Sản Phẩm': 'Trà Oolong Mẫu',
         'Slug': 'tra-oolong-mau',
         'Giá Bán': 150000,
+        'Tồn Kho': 100, // Cột mẫu tồn kho
         'Đường Dẫn Ảnh': '/uploads/ten-anh.jpg',
         'Mã Danh Mục (ID, cách nhau bởi dấu phẩy)': '1',
         'Mô Tả': 'Mô tả mẫu cho sản phẩm',
@@ -213,7 +225,6 @@ export default function AdminProductsPage() {
     XLSX.writeFile(workbook, 'File_Mau_Nhap_SanPham.xlsx');
   };
 
-  // --- TÍNH NĂNG IMPORT EXCEL ---
   const handleImportExcel = (e) => {
     const file = e.target.files[0];
     if (!file) return;
@@ -232,7 +243,8 @@ export default function AdminProductsPage() {
           code: String(row['Mã SP (Key)'] || '').trim(),
           name: row['Tên Sản Phẩm'],
           slug: row['Slug'],
-          price: row['Giá Bán'],
+          price: Number(row['Giá Bán']) || 0,
+          stock: Number(row['Tồn Kho']) || 0, // Đọc dữ liệu tồn kho từ file Excel
           image: row['Đường Dẫn Ảnh'],
           categoryIds: row['Mã Danh Mục (ID, cách nhau bởi dấu phẩy)'],
           description: row['Mô Tả'],
@@ -254,7 +266,7 @@ export default function AdminProductsPage() {
 
         const result = await res.json();
         if (res.ok) {
-          alert(`Import thành công! Thêm/Cập nhật thành công ${result.successCount} sản phẩm.`);
+          alert(`Import thành công! Thêm/Cập nhật thành công ${result.successCount || formattedData.length} sản phẩm.`);
           fetchData();
         } else {
           alert('Có lỗi xảy ra khi import!');
@@ -278,9 +290,8 @@ export default function AdminProductsPage() {
     <WithPermission permission="products" userPermissions={userPermissions}>
       <div>
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
-          <h1 className="text-2xl font-bold text-[#003B46] uppercase">Quản Lý Sản Phẩm</h1>
+          <h1 className="text-2xl font-bold text-[#003B46] uppercase">Quản Lý Sản Phẩm & Tồn Kho</h1>
           
-          {/* KHU VỰC NÚT EXCEL */}
           <div className="flex flex-wrap gap-2">
             <button
               onClick={handleDownloadTemplate}
@@ -308,10 +319,9 @@ export default function AdminProductsPage() {
           </div>
         </div>
 
-        {/* FORM THÊM / SỬA SẢN PHẨM */}
         <div className="bg-white p-6 rounded-2xl shadow-sm mb-8 border border-gray-100">
           <h2 className="text-sm font-bold text-gray-700 mb-4">
-            {formData.id ? '✏️ CHỈNH SỬA SẢN PHẨM' : '➕ THÊM SẢN PHẨM MỚI'}
+            {formData.id ? '✏️ CHỈNH SỬA SẢN PHẨM & TỒN KHO' : '➕ THÊM SẢN PHẨM MỚI'}
           </h2>
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -348,9 +358,6 @@ export default function AdminProductsPage() {
                 value={formData.slug}
                 onChange={handleSlugChange}
               />
-              <span className="text-[10px] text-gray-400 mt-1 block">
-                Hệ thống tự động tạo theo tên sản phẩm, bạn có thể chỉnh sửa lại tùy ý.
-              </span>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -360,27 +367,40 @@ export default function AdminProductsPage() {
                   type="number"
                   min="0"
                   required
-                  placeholder="Chỉ nhập số, ví dụ: 150000"
-                  value={formData.price || ''}
+                  placeholder="Ví dụ: 150000"
+                  value={formData.price}
                   onChange={(e) => setFormData({ ...formData, price: e.target.value })}
                   className="w-full border rounded-xl px-3 py-2.5 text-sm"
                 />
               </div>
               <div>
-                <label className="block text-xs font-bold text-gray-600 mb-1">Danh Mục Sản Phẩm (Chọn nhiều)</label>
-                <div className="grid grid-cols-2 gap-2 p-3 border rounded-xl bg-gray-50 max-h-40 overflow-y-auto">
-                  {categories.map((cat) => (
-                    <label key={cat.id} className="flex items-center gap-2 text-xs text-gray-700 cursor-pointer">
-                      <input
-                        type="checkbox"
-                        checked={(formData.categoryIds || []).includes(cat.id)}
-                        onChange={() => handleCategoryCheckboxChange(cat.id)}
-                        className="rounded border-gray-300 text-[#003B46] focus:ring-[#003B46]"
-                      />
-                      {cat.name} ({cat.id})
-                    </label>
-                  ))}
-                </div>
+                <label className="block text-xs font-bold text-gray-700 mb-1">Số Lượng Tồn Kho (*)</label>
+                <input
+                  type="number"
+                  min="0"
+                  required
+                  placeholder="Ví dụ: 50"
+                  value={formData.stock}
+                  onChange={(e) => setFormData({ ...formData, stock: e.target.value })}
+                  className="w-full border rounded-xl px-3 py-2.5 text-sm bg-yellow-50/30"
+                />
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-xs font-bold text-gray-600 mb-1">Danh Mục Sản Phẩm (Chọn nhiều)</label>
+              <div className="grid grid-cols-2 gap-2 p-3 border rounded-xl bg-gray-50 max-h-40 overflow-y-auto">
+                {categories.map((cat) => (
+                  <label key={cat.id} className="flex items-center gap-2 text-xs text-gray-700 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={(formData.categoryIds || []).includes(cat.id)}
+                      onChange={() => handleCategoryCheckboxChange(cat.id)}
+                      className="rounded border-gray-300 text-[#003B46] focus:ring-[#003B46]"
+                    />
+                    {cat.name} ({cat.id})
+                  </label>
+                ))}
               </div>
             </div>
 
@@ -399,9 +419,6 @@ export default function AdminProductsPage() {
                   <input type="file" accept="image/*" className="hidden" onChange={handleImageUpload} />
                 </label>
               </div>
-              <span className="text-[10px] text-gray-400 mt-1 block">
-                Gợi ý: Upload ảnh vào thư mục <code>public/uploads/</code> rồi điền tên dạng <code>/uploads/ten-anh.jpg</code> để dùng cho file Excel.
-              </span>
             </div>
 
             <div>
@@ -409,7 +426,7 @@ export default function AdminProductsPage() {
               <textarea
                 rows={4}
                 className="w-full p-2.5 border rounded-xl text-sm"
-                placeholder="Thông tin thành phần, hương vị, cách đóng gói..."
+                placeholder="Thông tin thành phần, hương vị..."
                 value={formData.description || ''}
                 onChange={(e) => setFormData({ ...formData, description: e.target.value })}
               />
@@ -468,9 +485,8 @@ export default function AdminProductsPage() {
           </form>
         </div>
 
-        {/* DANH SÁCH SẢN PHẨM */}
         <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
-          <h2 className="text-sm font-bold text-gray-700 mb-4">DANH SÁCH SẢN PHẨM ({products.length})</h2>
+          <h2 className="text-sm font-bold text-gray-700 mb-4">DANH SÁCH SẢN PHẨM & TỒN KHO ({products.length})</h2>
           <div className="overflow-x-auto">
             <table className="w-full text-left text-xs">
               <thead>
@@ -479,6 +495,7 @@ export default function AdminProductsPage() {
                   <th className="p-3">HÌNH ẢNH</th>
                   <th className="p-3">TÊN SẢN PHẨM</th>
                   <th className="p-3">GIÁ BÁN</th>
+                  <th className="p-3">TỒN KHO</th>
                   <th className="p-3">DANH MỤC</th>
                   <th className="p-3 text-right">THAO TÁC</th>
                 </tr>
@@ -486,7 +503,7 @@ export default function AdminProductsPage() {
               <tbody className="divide-y">
                 {products.length === 0 ? (
                   <tr>
-                    <td colSpan={6} className="p-4 text-center text-gray-400">Chưa có sản phẩm nào</td>
+                    <td colSpan={7} className="p-4 text-center text-gray-400">Chưa có sản phẩm nào</td>
                   </tr>
                 ) : (
                   products.map((item) => (
@@ -504,6 +521,13 @@ export default function AdminProductsPage() {
                       </td>
                       <td className="p-3 font-bold text-gray-800">{item.name}</td>
                       <td className="p-3 font-bold text-emerald-600">{item.price}</td>
+                      <td className="p-3">
+                        <span className={`px-2.5 py-1 rounded-full font-bold ${
+                          (item.stock || 0) > 10 ? 'bg-green-50 text-green-700' : (item.stock || 0) > 0 ? 'bg-orange-50 text-orange-700' : 'bg-red-50 text-red-700'
+                        }`}>
+                          {item.stock ?? 0}
+                        </span>
+                      </td>
                       <td className="p-3 text-gray-500">
                         {item.categories && item.categories.length > 0
                           ? item.categories.map((c) => `${c.name} (ID:${c.id})`).join(', ')

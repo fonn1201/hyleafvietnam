@@ -31,6 +31,7 @@ export async function POST(request) {
 
           const slug = item.slug ? generateSlug(item.slug) : generateSlug(item.name);
           const priceStr = item.price !== undefined && item.price !== null ? String(item.price) : "0";
+          const stockVal = item.stock !== undefined && item.stock !== null ? Number(item.stock) : 0; // Xử lý trường tồn kho
 
           // Chuẩn bị danh mục nếu có truyền vào (dạng chuỗi ID ngăn cách bởi dấu phẩy hoặc mảng số)
           let catConnect = [];
@@ -55,6 +56,7 @@ export async function POST(request) {
                 name: item.name,
                 slug: slug,
                 price: priceStr,
+                stock: isNaN(stockVal) ? 0 : stockVal, // Lưu tồn kho khi update hàng loạt
                 description: item.description || null,
                 image: item.image || null,
                 isVisible: item.isVisible !== undefined ? Boolean(item.isVisible) : true,
@@ -73,6 +75,7 @@ export async function POST(request) {
                 name: item.name,
                 slug: slug,
                 price: priceStr,
+                stock: isNaN(stockVal) ? 0 : stockVal, // Lưu tồn kho khi tạo mới hàng loạt
                 description: item.description || null,
                 image: item.image || null,
                 isVisible: item.isVisible !== undefined ? Boolean(item.isVisible) : true,
@@ -97,6 +100,7 @@ export async function POST(request) {
     // XỬ LÝ POST THÔNG THƯỜNG (1 SẢN PHẨM)
     const { id, ...restBody } = body;
     const slug = restBody.slug ? generateSlug(restBody.slug) : generateSlug(restBody.name);
+    const stockVal = restBody.stock !== undefined && restBody.stock !== null ? Number(restBody.stock) : 0;
 
     const newProduct = await prisma.product.create({
       data: {
@@ -104,6 +108,7 @@ export async function POST(request) {
         name: restBody.name,
         slug: slug,
         price: restBody.price ? String(restBody.price) : "0",
+        stock: isNaN(stockVal) ? 0 : stockVal, // Lưu số lượng tồn kho
         description: restBody.description || null,
         isVisible: restBody.isVisible !== undefined ? Boolean(restBody.isVisible) : true,
         image: restBody.image || null,
@@ -133,6 +138,7 @@ export async function PUT(request) {
     }
 
     const slug = body.slug ? generateSlug(body.slug) : generateSlug(body.name);
+    const stockVal = body.stock !== undefined && body.stock !== null ? Number(body.stock) : 0;
 
     const updatedProduct = await prisma.product.update({
       where: { id: Number(body.id) },
@@ -141,6 +147,7 @@ export async function PUT(request) {
         name: body.name,
         slug: slug,
         price: String(body.price),
+        stock: isNaN(stockVal) ? 0 : stockVal, // Cập nhật số lượng tồn kho
         description: body.description || null,
         isVisible: body.isVisible !== undefined ? Boolean(body.isVisible) : true,
         image: body.image || null,
