@@ -88,7 +88,7 @@ export default function Header() {
     <header className="bg-[#12412C] text-[#FFFBF3] sticky top-0 z-50 shadow-md">
       <div className="max-w-6xl mx-auto px-4 py-3">
         <div className="grid grid-cols-1 md:grid-cols-4 gap-6 items-center">
-          <div className="md:col-span-1 flex items-center justify-between">
+          <div className="md:col-span-1 flex items-center justify-between md:justify-center">
             <Link href="/" className="flex items-center gap-3 group">
               <img 
                 src="/logo.png" 
