@@ -20,8 +20,8 @@ export default async function BlogPage() {
           {blogList.map((item) => (
             <div key={item.id} className="bg-white p-4 rounded-xl border shadow-sm">
               <h2 className="font-bold text-lg text-gray-800">{item.title}</h2>
-              <p className="text-xs text-gray-500 mt-1">{item.excerpt}</p>
-              <Link href={`/posts/${item.slug}`} className="text-xs font-bold text-blue-600 mt-3 inline-block">
+              <p className="text-sm text-gray-500 mt-1">{item.excerpt}</p>
+              <Link href={`/posts/${item.slug}`} className="text-sm font-bold text-blue-600 mt-3 inline-block">
                 Xem chi tiết →
               </Link>
             </div>

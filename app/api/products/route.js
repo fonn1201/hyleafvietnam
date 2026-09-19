@@ -2,14 +2,45 @@ import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { generateSlug } from '@/lib/slugify';
 
-// GET: Lấy danh sách sản phẩm
-export async function GET() {
+// Bỏ dấu tiếng Việt để so khớp không phân biệt có dấu/không dấu
+function removeAccents(str) {
+  return String(str)
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/đ/g, 'd')
+    .replace(/Đ/g, 'D');
+}
+
+// GET: Lấy danh sách sản phẩm. Hỗ trợ ?search=... để lọc theo tên/mã
+// (dùng cho gợi ý tìm kiếm) và ?limit=... để giới hạn số lượng trả về,
+// tránh phải tải toàn bộ sản phẩm về trình duyệt mỗi lần gõ phím.
+export async function GET(request) {
   try {
+    const { searchParams } = new URL(request.url);
+    const search = searchParams.get('search')?.trim();
+    const limitParam = Number(searchParams.get('limit'));
+    const limit = Number.isFinite(limitParam) && limitParam > 0 ? limitParam : undefined;
+
     const products = await prisma.product.findMany({
       include: { categories: true },
       orderBy: { id: 'desc' },
     });
-    return NextResponse.json(products);
+
+    let result = products;
+    if (search) {
+      const normalizedTerm = removeAccents(search).toLowerCase();
+      result = products.filter((p) => {
+        const matchName = p.name && removeAccents(p.name).toLowerCase().includes(normalizedTerm);
+        const matchCode = p.code && p.code.toLowerCase().includes(search.toLowerCase());
+        return matchName || matchCode;
+      });
+    }
+
+    if (limit) {
+      result = result.slice(0, limit);
+    }
+
+    return NextResponse.json(result);
   } catch (error) {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
