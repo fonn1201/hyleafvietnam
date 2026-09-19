@@ -1,6 +1,7 @@
 import { prisma } from "@/lib/prisma";
 import HeroSlider from "@/components/HeroSlider";
 import Link from "next/link";
+import Image from "next/image";
 import { formatPrice } from "@/lib/utils";
 
 export default async function HomePage() {
@@ -19,7 +20,14 @@ export default async function HomePage() {
   });
   const isOnlineSales = setting?.isOnlineSales ?? false;
 
-  // 4. LỌC SẢN PHẨM THEO CỜ TÍCH TỪ ADMIN:
+  // 4. Lấy banner slide ngay tại server, tránh phải fetch lại phía client
+  //    (giúp banner hiện ngay lần tải đầu, không bị "nháy" trắng)
+  const slides = await prisma.slide.findMany({
+    where: { active: true },
+    orderBy: { order: "asc" },
+  });
+
+  // 5. LỌC SẢN PHẨM THEO CỜ TÍCH TỪ ADMIN:
   const bestSellers = products.filter((p) => p.isBestSeller);
   const giftProducts = products.filter((p) => p.isGift);
 
@@ -31,10 +39,10 @@ export default async function HomePage() {
         <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
           {/* Cột 1: Danh Mục Trà */}
           <div className="md:col-span-1 hidden md:block bg-white rounded-2xl p-5 border border-[#12412C]/10 shadow-sm h-full">
-            <h2 className="font-black text-[#12412C] uppercase text-xs tracking-wider mb-4 pb-2 border-b border-[#12412C]/10 flex items-center gap-2">
+            <h2 className="font-black text-[#12412C] uppercase text-sm tracking-wider mb-4 pb-2 border-b border-[#12412C]/10 flex items-center gap-2">
               📋 DANH MỤC TRÀ
             </h2>
-            <ul className="space-y-3 font-semibold text-xs">
+            <ul className="space-y-3 font-semibold text-sm">
               {categories.map((cat) => (
                 <li key={cat.slug}>
                   <Link 
@@ -50,31 +58,31 @@ export default async function HomePage() {
 
           {/* Cột 2-4: Banner Slider */}
           <div className="md:col-span-3">
-            <HeroSlider />
+            <HeroSlider slides={slides} />
           </div>
         </div>
 
         {/* KHỐI 4 GIÁ TRỊ CAM KẾT */}
         <div className="bg-white rounded-2xl p-5 border border-[#12412C]/10 shadow-sm grid grid-cols-2 md:grid-cols-4 gap-4 text-center">
           <div className="p-2 border-r border-[#12412C]/5 last:border-0">
-            <div className="text-xl mb-1">🌱</div>
-            <h3 className="font-bold text-xs text-[#12412C]">100% Nguyên Chất</h3>
-            <p className="text-[10px] text-gray-500">Trà Oolong Bảo Lộc chính gốc</p>
+            <div className="text-2xl mb-1">🌱</div>
+            <h3 className="font-bold text-sm text-[#12412C]">100% Nguyên Chất</h3>
+            <p className="text-xs text-gray-500">Trà Oolong Bảo Lộc chính gốc</p>
           </div>
           <div className="p-2 border-r border-[#12412C]/5 last:border-0">
-            <div className="text-xl mb-1">🚀</div>
-            <h3 className="font-bold text-xs text-[#12412C]">Giao Hàng Nhanh</h3>
-            <p className="text-[10px] text-gray-500">Đóng gói chuẩn bảo quản hương vị</p>
+            <div className="text-2xl mb-1">🚀</div>
+            <h3 className="font-bold text-sm text-[#12412C]">Giao Hàng Nhanh</h3>
+            <p className="text-xs text-gray-500">Đóng gói chuẩn bảo quản hương vị</p>
           </div>
           <div className="p-2 border-r border-[#12412C]/5 last:border-0">
-            <div className="text-xl mb-1">🎁</div>
-            <h3 className="font-bold text-xs text-[#12412C]">Quà Tặng Sang Trọng</h3>
-            <p className="text-[10px] text-gray-500">Thiết kế hộp quà biếu cao cấp</p>
+            <div className="text-2xl mb-1">🎁</div>
+            <h3 className="font-bold text-sm text-[#12412C]">Quà Tặng Sang Trọng</h3>
+            <p className="text-xs text-gray-500">Thiết kế hộp quà biếu cao cấp</p>
           </div>
           <div className="p-2">
-            <div className="text-xl mb-1">💬</div>
-            <h3 className="font-bold text-xs text-[#12412C]">Tư Vấn Thưởng Trà</h3>
-            <p className="text-[10px] text-gray-500">Hỗ trợ công thức pha chế tận tình</p>
+            <div className="text-2xl mb-1">💬</div>
+            <h3 className="font-bold text-sm text-[#12412C]">Tư Vấn Thưởng Trà</h3>
+            <p className="text-xs text-gray-500">Hỗ trợ công thức pha chế tận tình</p>
           </div>
         </div>
 
@@ -83,10 +91,10 @@ export default async function HomePage() {
           <section className="space-y-4">
             <div className="flex justify-between items-end border-b border-[#12412C]/10 pb-2">
               <div>
-                <h2 className="text-lg font-black text-[#12412C] uppercase tracking-wide">SẢN PHẨM BÁN CHẠY</h2>
-                <p className="text-xs text-gray-500">Những dòng trà được yêu thích và lựa chọn nhiều nhất</p>
+                <h2 className="text-xl font-black text-[#12412C] uppercase tracking-wide">SẢN PHẨM BÁN CHẠY</h2>
+                <p className="text-sm text-gray-500">Những dòng trà được yêu thích và lựa chọn nhiều nhất</p>
               </div>
-              <Link href="/products" className="text-xs font-bold text-[#12412C] hover:underline">
+              <Link href="/products" className="text-sm font-bold text-[#12412C] hover:underline">
                 Xem tất cả →
               </Link>
             </div>
@@ -95,15 +103,23 @@ export default async function HomePage() {
               {bestSellers.map((product) => (
                 <div key={product.id} className="bg-white rounded-2xl border border-[#12412C]/10 p-3 shadow-sm hover:shadow-md transition flex flex-col justify-between">
                   <div>
-                    <img src={product.image || "/placeholder.jpg"} alt={product.name} className="w-full h-36 object-cover rounded-xl mb-3" />
-                    <span className="text-[9px] text-amber-800 font-bold bg-amber-100 px-2 py-0.5 rounded-full mb-1 inline-block">Bán Chạy</span>
-                    <h3 className="font-bold text-xs text-gray-800 line-clamp-2">{product.name}</h3>
+                    <div className="relative w-full h-36 rounded-xl overflow-hidden mb-3 bg-gray-100">
+                      <Image
+                        src={product.image || "/placeholder.jpg"}
+                        alt={product.name}
+                        fill
+                        sizes="(min-width: 768px) 25vw, 50vw"
+                        className="object-cover"
+                      />
+                    </div>
+                    <span className="text-xs text-amber-800 font-bold bg-amber-100 px-2 py-0.5 rounded-full mb-1 inline-block">Bán Chạy</span>
+                    <h3 className="font-bold text-sm text-gray-800 line-clamp-2">{product.name}</h3>
                   </div>
                   <div className="mt-3 flex items-center justify-between">
-                    <span className="text-xs font-black text-[#12412C]">
+                    <span className="text-sm font-black text-[#12412C]">
                       {formatPrice(product.price, isOnlineSales)}
                     </span>
-                    <Link href={`/products/${product.slug}`} className="bg-[#12412C] text-[#FFFBF3] text-[10px] font-bold px-3 py-1.5 rounded-full hover:bg-emerald-900 transition">
+                    <Link href={`/products/${product.slug}`} className="bg-[#12412C] text-[#FFFBF3] text-xs font-bold px-3 py-1.5 rounded-full hover:bg-emerald-900 transition">
                       Chi tiết
                     </Link>
                   </div>
@@ -118,10 +134,10 @@ export default async function HomePage() {
           <section className="space-y-4">
             <div className="flex justify-between items-end border-b border-[#12412C]/10 pb-2">
               <div>
-                <h2 className="text-lg font-black text-[#12412C] uppercase tracking-wide">GIẢI PHÁP & QUÀ TẶNG</h2>
-                <p className="text-xs text-gray-500">Hộp quà biếu sang trọng và giải pháp trà chuyên biệt</p>
+                <h2 className="text-xl font-black text-[#12412C] uppercase tracking-wide">GIẢI PHÁP & QUÀ TẶNG</h2>
+                <p className="text-sm text-gray-500">Hộp quà biếu sang trọng và giải pháp trà chuyên biệt</p>
               </div>
-              <Link href="/products" className="text-xs font-bold text-[#12412C] hover:underline">
+              <Link href="/products" className="text-sm font-bold text-[#12412C] hover:underline">
                 Xem tất cả →
               </Link>
             </div>
@@ -130,15 +146,23 @@ export default async function HomePage() {
               {giftProducts.map((product) => (
                 <div key={product.id} className="bg-white rounded-2xl border border-[#12412C]/10 p-3 shadow-sm hover:shadow-md transition flex flex-col justify-between">
                   <div>
-                    <img src={product.image || "/placeholder.jpg"} alt={product.name} className="w-full h-36 object-cover rounded-xl mb-3" />
-                    <span className="text-[9px] text-emerald-800 font-bold bg-emerald-100 px-2 py-0.5 rounded-full mb-1 inline-block">Quà Biếu</span>
-                    <h3 className="font-bold text-xs text-gray-800 line-clamp-2">{product.name}</h3>
+                    <div className="relative w-full h-36 rounded-xl overflow-hidden mb-3 bg-gray-100">
+                      <Image
+                        src={product.image || "/placeholder.jpg"}
+                        alt={product.name}
+                        fill
+                        sizes="(min-width: 768px) 25vw, 50vw"
+                        className="object-cover"
+                      />
+                    </div>
+                    <span className="text-xs text-emerald-800 font-bold bg-emerald-100 px-2 py-0.5 rounded-full mb-1 inline-block">Quà Biếu</span>
+                    <h3 className="font-bold text-sm text-gray-800 line-clamp-2">{product.name}</h3>
                   </div>
                   <div className="mt-3 flex items-center justify-between">
-                    <span className="text-xs font-black text-[#12412C]">
+                    <span className="text-sm font-black text-[#12412C]">
                       {formatPrice(product.price, isOnlineSales)}
                     </span>
-                    <Link href={`/products/${product.slug}`} className="bg-[#12412C] text-[#FFFBF3] text-[10px] font-bold px-3 py-1.5 rounded-full hover:bg-emerald-900 transition">
+                    <Link href={`/products/${product.slug}`} className="bg-[#12412C] text-[#FFFBF3] text-xs font-bold px-3 py-1.5 rounded-full hover:bg-emerald-900 transition">
                       Chi tiết
                     </Link>
                   </div>
