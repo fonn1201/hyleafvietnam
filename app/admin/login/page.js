@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
+import Link from 'next/link';
 
 export default function AdminLogin() {
   const [email, setEmail] = useState('');
@@ -26,8 +27,10 @@ export default function AdminLogin() {
       } catch (e) {}
 
       if (res.ok) {
-        // Dùng window.location.href để ép trình duyệt tải lại hoàn toàn, 
-        // giúp cập nhật chính xác thông tin user mới đăng nhập ở thanh menu bên trái
+        // Cố ý dùng window.location.href thay vì router.push() để ép trình
+        // duyệt tải lại HOÀN TOÀN, giúp AdminSidebar (đọc quyền hạn từ JWT
+        // ở server layout) cập nhật đúng người vừa đăng nhập.
+        // eslint-disable-next-line @next/next/no-location-assign-relative-destination
         window.location.href = '/admin';
       } else {
         setError(data.error || 'Đăng nhập thất bại, vui lòng kiểm tra lại thông tin!');
@@ -92,9 +95,9 @@ export default function AdminLogin() {
         </form>
 
         <div className="mt-8 text-center border-t border-gray-100 pt-4">
-          <a href="/" className="text-xs font-semibold text-gray-400 hover:text-gray-600 transition">
+          <Link href="/" className="text-xs font-semibold text-gray-400 hover:text-gray-600 transition">
             ← Quay lại trang chủ website
-          </a>
+          </Link>
         </div>
       </div>
     </div>
