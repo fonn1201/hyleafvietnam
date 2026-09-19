@@ -1,5 +1,6 @@
 import { prisma } from "@/lib/prisma";
 import Link from "next/link";
+import Image from "next/image";
 import { formatPrice } from "@/lib/utils";
 
 export default async function ProductsPage({ searchParams }) {
@@ -40,7 +41,7 @@ export default async function ProductsPage({ searchParams }) {
           <h1 className="text-2xl font-black text-[#12412C] uppercase">
             {search ? `KẾT QUẢ TÌM KIẾM: "${search}"` : "DANH SÁCH TẤT CẢ SẢN PHẨM"}
           </h1>
-          <p className="text-xs text-gray-500 mt-1">
+          <p className="text-sm text-gray-500 mt-1">
             Tìm thấy {products.length} sản phẩm phù hợp
           </p>
         </div>
@@ -48,8 +49,8 @@ export default async function ProductsPage({ searchParams }) {
 
       {products.length === 0 ? (
         <div className="bg-white rounded-2xl p-12 text-center border border-[#12412C]/10 shadow-sm">
-          <p className="text-gray-500 text-sm mb-4">Không tìm thấy sản phẩm nào phù hợp.</p>
-          <Link href="/products" className="bg-[#12412C] text-[#FFFBF3] text-xs font-bold px-5 py-2.5 rounded-full inline-block">
+          <p className="text-gray-500 text-base mb-4">Không tìm thấy sản phẩm nào phù hợp.</p>
+          <Link href="/products" className="bg-[#12412C] text-[#FFFBF3] text-sm font-bold px-5 py-2.5 rounded-full inline-block">
             Xem Tất Cả Sản Phẩm
           </Link>
         </div>
@@ -61,39 +62,43 @@ export default async function ProductsPage({ searchParams }) {
               className="bg-white rounded-2xl border border-[#12412C]/10 p-4 shadow-sm hover:shadow-md transition flex flex-col justify-between"
             >
               <div>
-                <img
-                  src={product.image || "/placeholder.jpg"}
-                  alt={product.name}
-                  className="w-full h-44 object-cover rounded-xl mb-3"
-                />
+                <div className="relative w-full h-44 rounded-xl overflow-hidden mb-3 bg-gray-100">
+                  <Image
+                    src={product.image || "/placeholder.jpg"}
+                    alt={product.name}
+                    fill
+                    sizes="(min-width: 768px) 25vw, 50vw"
+                    className="object-cover"
+                  />
+                </div>
                 <div className="flex flex-wrap gap-1 mb-1">
                   {product.isBestSeller && (
-                    <span className="text-[9px] text-amber-800 font-bold bg-amber-100 px-2 py-0.5 rounded-full">
+                    <span className="text-xs text-amber-800 font-bold bg-amber-100 px-2 py-0.5 rounded-full">
                       Bán Chạy
                     </span>
                   )}
                   {product.isGift && (
-                    <span className="text-[9px] text-emerald-800 font-bold bg-emerald-100 px-2 py-0.5 rounded-full">
+                    <span className="text-xs text-emerald-800 font-bold bg-emerald-100 px-2 py-0.5 rounded-full">
                       Quà Biếu
                     </span>
                   )}
                 </div>
-                <h3 className="font-bold text-sm text-gray-800 line-clamp-2 mb-1">
+                <h3 className="font-bold text-base text-gray-800 line-clamp-2 mb-1">
                   {product.name}
                 </h3>
                 {product.description && (
-                  <p className="text-[11px] text-gray-500 line-clamp-2">
+                  <p className="text-sm text-gray-500 line-clamp-2">
                     {product.description}
                   </p>
                 )}
               </div>
               <div className="mt-4 flex items-center justify-between">
-                <span className="text-sm font-black text-[#12412C]">
+                <span className="text-base font-black text-[#12412C]">
                   {formatPrice(product.price, isOnlineSales)}
                 </span>
                 <Link
                   href={`/products/${product.slug}`}
-                  className="bg-[#12412C] text-[#FFFBF3] text-xs font-bold px-3.5 py-1.5 rounded-full hover:bg-emerald-900 transition"
+                  className="bg-[#12412C] text-[#FFFBF3] text-sm font-bold px-3.5 py-1.5 rounded-full hover:bg-emerald-900 transition"
                 >
                   Chi tiết
                 </Link>
