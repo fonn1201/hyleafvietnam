@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import bcrypt from 'bcryptjs';
+import { signAdminToken, ADMIN_COOKIE_NAME, ADMIN_COOKIE_MAX_AGE } from '@/lib/auth';
 
 export async function POST(request) {
   try {
@@ -26,27 +27,36 @@ export async function POST(request) {
       return NextResponse.json({ error: 'Mật khẩu quản trị không chính xác!' }, { status: 401 });
     }
 
+    // Chuẩn hóa danh sách quyền thành mảng
+    let permissionsArray = [];
+    if (typeof adminUser.permissions === 'string' && adminUser.permissions.trim() !== '') {
+      permissionsArray = adminUser.permissions.split(',').map((p) => p.trim()).filter(Boolean);
+    } else if (Array.isArray(adminUser.permissions)) {
+      permissionsArray = adminUser.permissions;
+    }
+
+    // Ký phiên đăng nhập thành JWT có chữ ký, chống giả mạo cookie.
+    // Toàn bộ thông tin xác thực (id, email, quyền) nằm trong token này,
+    // không còn cookie "admin_permissions" rời rạc mà client có thể tự sửa.
+    const token = signAdminToken({
+      id: adminUser.id,
+      email: adminUser.email,
+      name: adminUser.name,
+      permissions: permissionsArray,
+    });
+
     const response = NextResponse.json({ success: true });
-    
-    // Lưu email vào cookie
-    response.cookies.set('admin_token', adminUser.email, {
+
+    response.cookies.set(ADMIN_COOKIE_NAME, token, {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
       sameSite: 'strict',
       path: '/',
-      maxAge: 60 * 60 * 24,
+      maxAge: ADMIN_COOKIE_MAX_AGE,
     });
 
-    // Lưu quyền vào cookie
-    let userPermissions = adminUser.permissions || '';
-    if (Array.isArray(userPermissions)) {
-      userPermissions = userPermissions.join(',');
-    }
-
-    response.cookies.set('admin_permissions', userPermissions, {
-      path: '/',
-      maxAge: 60 * 60 * 24,
-    });
+    // Xóa cookie cũ (nếu còn từ phiên bản trước) để tránh dữ liệu rác
+    response.cookies.delete('admin_permissions');
 
     return response;
   } catch (err) {

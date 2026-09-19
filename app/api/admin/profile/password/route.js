@@ -2,13 +2,15 @@ import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import bcrypt from 'bcryptjs';
 import { cookies } from 'next/headers';
+import { verifyAdminToken, ADMIN_COOKIE_NAME } from '@/lib/auth';
 
 export async function PUT(request) {
   try {
     const cookieStore = await cookies();
-    const token = cookieStore.get('admin_token')?.value;
+    const token = cookieStore.get(ADMIN_COOKIE_NAME)?.value;
+    const session = verifyAdminToken(token);
 
-    if (!token) {
+    if (!session) {
       return NextResponse.json({ error: 'Chưa đăng nhập hoặc phiên làm việc hết hạn!' }, { status: 401 });
     }
 
@@ -18,19 +20,8 @@ export async function PUT(request) {
       return NextResponse.json({ error: 'Vui lòng điền đầy đủ mật khẩu cũ và mới!' }, { status: 400 });
     }
 
-    // Tìm đúng tài khoản đang thao tác dựa trên token hoặc email thực tế
-    let user = await prisma.user.findFirst({
-      where: { 
-        OR: [
-          { email: token },
-          { email: 'nqhao1201@gmail.com' }
-        ]
-      }
-    });
-
-    if (!user) {
-      user = await prisma.user.findFirst(); // Lấy user đầu tiên nếu không khớp
-    }
+    // Chỉ tìm đúng tài khoản đang đăng nhập theo id đã xác thực trong JWT
+    const user = await prisma.user.findUnique({ where: { id: session.id } });
 
     if (!user) {
       return NextResponse.json({ error: 'Không tìm thấy tài khoản quản trị trong cơ sở dữ liệu!' }, { status: 404 });

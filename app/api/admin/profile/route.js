@@ -1,47 +1,37 @@
 import { NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
 import { prisma } from '@/lib/prisma';
+import { verifyAdminToken, ADMIN_COOKIE_NAME } from '@/lib/auth';
 
 export async function GET() {
   try {
     const cookieStore = await cookies();
-    const token = cookieStore.get('admin_token')?.value;
+    const token = cookieStore.get(ADMIN_COOKIE_NAME)?.value;
+    const session = verifyAdminToken(token);
 
-    if (!token) {
-      return NextResponse.json({ error: 'Chưa đăng nhập' }, { status: 401 });
+    if (!session) {
+      return NextResponse.json({ error: 'Chưa đăng nhập hoặc phiên đã hết hạn' }, { status: 401 });
     }
 
-    // Tìm chính xác user dựa vào giá trị token đang lưu (hoặc email lưu trong cookie session nếu có)
-    // Nếu hệ thống của bạn lưu email trực tiếp vào token/cookie, ta dùng biến `token` để tìm:
-    let user = await prisma.user.findFirst({
-      where: {
-        OR: [
-          { email: token },
-          { name: token }
-        ]
-      }
-    });
-
-    // Nếu không tìm thấy bằng token, fallback lấy user đầu tiên hoặc user có email admin@gmail.com tùy theo hệ thống login của bạn
+    // Tra đúng user theo id đã xác thực trong JWT — KHÔNG fallback sang user khác,
+    // tránh lộ thông tin tài khoản admin bất kỳ khi token không khớp.
+    const user = await prisma.user.findUnique({ where: { id: session.id } });
     if (!user) {
-      user = await prisma.user.findFirst({ where: { email: 'admin@gmail.com' } }) || await prisma.user.findFirst();
+      return NextResponse.json({ error: 'Tài khoản không còn tồn tại' }, { status: 401 });
     }
 
-    // Tách chuỗi permissions trong cơ sở dữ liệu của user đó ra thành mảng
     let permissions = [];
-    if (user && user.permissions) {
+    if (user.permissions) {
       permissions = user.permissions.split(',').map((p) => p.trim()).filter(Boolean);
-    } else {
-      permissions = ['products', 'categories', 'users', 'news'];
     }
 
     return NextResponse.json({
       success: true,
-      permissions: permissions,
+      permissions,
       user: {
-        email: user ? user.email : token,
-        name: user ? user.name : 'Quản Trị Viên',
-        permissions: permissions,
+        email: user.email,
+        name: user.name,
+        permissions,
       },
     });
   } catch (err) {
