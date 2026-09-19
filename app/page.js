@@ -1,8 +1,7 @@
 import { prisma } from "@/lib/prisma";
 import HeroSlider from "@/components/HeroSlider";
+import ProductBlock from "@/components/ProductBlock";
 import Link from "next/link";
-import Image from "next/image";
-import { formatPrice } from "@/lib/utils";
 
 export default async function HomePage() {
   // 1. Lấy tất cả danh mục trà từ Database
@@ -34,7 +33,7 @@ export default async function HomePage() {
   return (
     <main className="min-h-screen bg-[#FAF8F5]">
       <div className="max-w-6xl mx-auto px-4 py-6 space-y-8">
-        
+
         {/* KHỐI HERO BANNER */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
           {/* Cột 1: Danh Mục Trà */}
@@ -45,7 +44,7 @@ export default async function HomePage() {
             <ul className="space-y-3 font-semibold text-sm">
               {categories.map((cat) => (
                 <li key={cat.slug}>
-                  <Link 
+                  <Link
                     href={`/categories/${cat.slug}`}
                     className="block text-gray-700 hover:text-[#12412C] hover:font-bold transition"
                   >
@@ -86,91 +85,22 @@ export default async function HomePage() {
           </div>
         </div>
 
-        {/* KHỐI 1: SẢN PHẨM BÁN CHẠY */}
-        {bestSellers.length > 0 && (
-          <section className="space-y-4">
-            <div className="flex justify-between items-end border-b border-[#12412C]/10 pb-2">
-              <div>
-                <h2 className="text-xl font-black text-[#12412C] uppercase tracking-wide">SẢN PHẨM BÁN CHẠY</h2>
-                <p className="text-sm text-gray-500">Những dòng trà được yêu thích và lựa chọn nhiều nhất</p>
-              </div>
-              <Link href="/products" className="text-sm font-bold text-[#12412C] hover:underline">
-                Xem tất cả →
-              </Link>
-            </div>
+        {/* KHỐI SẢN PHẨM: dùng chung component ProductBlock để tránh lặp code
+            và giữ đồng bộ nếu sau này cần chỉnh giao diện chung */}
+        <ProductBlock
+          title="Sản Phẩm Bán Chạy"
+          subtitle="Những dòng trà được yêu thích và lựa chọn nhiều nhất"
+          products={bestSellers}
+          isOnlineSales={isOnlineSales}
+        />
 
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-              {bestSellers.map((product) => (
-                <div key={product.id} className="bg-white rounded-2xl border border-[#12412C]/10 p-3 shadow-sm hover:shadow-md transition flex flex-col justify-between">
-                  <div>
-                    <div className="relative w-full h-36 rounded-xl overflow-hidden mb-3 bg-gray-100">
-                      <Image
-                        src={product.image || "/placeholder.jpg"}
-                        alt={product.name}
-                        fill
-                        sizes="(min-width: 768px) 25vw, 50vw"
-                        className="object-cover"
-                      />
-                    </div>
-                    <span className="text-xs text-amber-800 font-bold bg-amber-100 px-2 py-0.5 rounded-full mb-1 inline-block">Bán Chạy</span>
-                    <h3 className="font-bold text-sm text-gray-800 line-clamp-2">{product.name}</h3>
-                  </div>
-                  <div className="mt-3 flex items-center justify-between">
-                    <span className="text-sm font-black text-[#12412C]">
-                      {formatPrice(product.price, isOnlineSales)}
-                    </span>
-                    <Link href={`/products/${product.slug}`} className="bg-[#12412C] text-[#FFFBF3] text-xs font-bold px-3 py-1.5 rounded-full hover:bg-emerald-900 transition">
-                      Chi tiết
-                    </Link>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </section>
-        )}
-
-        {/* KHỐI 2: GIẢI PHÁP & QUÀ TẶNG */}
-        {giftProducts.length > 0 && (
-          <section className="space-y-4">
-            <div className="flex justify-between items-end border-b border-[#12412C]/10 pb-2">
-              <div>
-                <h2 className="text-xl font-black text-[#12412C] uppercase tracking-wide">GIẢI PHÁP & QUÀ TẶNG</h2>
-                <p className="text-sm text-gray-500">Hộp quà biếu sang trọng và giải pháp trà chuyên biệt</p>
-              </div>
-              <Link href="/products" className="text-sm font-bold text-[#12412C] hover:underline">
-                Xem tất cả →
-              </Link>
-            </div>
-
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-              {giftProducts.map((product) => (
-                <div key={product.id} className="bg-white rounded-2xl border border-[#12412C]/10 p-3 shadow-sm hover:shadow-md transition flex flex-col justify-between">
-                  <div>
-                    <div className="relative w-full h-36 rounded-xl overflow-hidden mb-3 bg-gray-100">
-                      <Image
-                        src={product.image || "/placeholder.jpg"}
-                        alt={product.name}
-                        fill
-                        sizes="(min-width: 768px) 25vw, 50vw"
-                        className="object-cover"
-                      />
-                    </div>
-                    <span className="text-xs text-emerald-800 font-bold bg-emerald-100 px-2 py-0.5 rounded-full mb-1 inline-block">Quà Biếu</span>
-                    <h3 className="font-bold text-sm text-gray-800 line-clamp-2">{product.name}</h3>
-                  </div>
-                  <div className="mt-3 flex items-center justify-between">
-                    <span className="text-sm font-black text-[#12412C]">
-                      {formatPrice(product.price, isOnlineSales)}
-                    </span>
-                    <Link href={`/products/${product.slug}`} className="bg-[#12412C] text-[#FFFBF3] text-xs font-bold px-3 py-1.5 rounded-full hover:bg-emerald-900 transition">
-                      Chi tiết
-                    </Link>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </section>
-        )}
+        <ProductBlock
+          title="Giải Pháp & Quà Tặng"
+          subtitle="Hộp quà biếu sang trọng và giải pháp trà chuyên biệt"
+          products={giftProducts}
+          isDarkBg
+          isOnlineSales={isOnlineSales}
+        />
 
       </div>
     </main>

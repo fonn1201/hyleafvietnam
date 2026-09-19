@@ -1,44 +1,68 @@
-'use client';
+import Link from "next/link";
+import Image from "next/image";
+import { notFound } from "next/navigation";
+import { prisma } from "@/lib/prisma";
+import { formatPrice } from "@/lib/utils";
 
-import React, { useState, useEffect } from 'react';
-import { useParams } from 'next/navigation';
-import { formatPrice } from '@/lib/utils';
+// Tìm sản phẩm theo slug trước, sau đó theo mã, cuối cùng theo id số
+// (giữ đúng logic tra cứu đang dùng ở API /api/products/[id])
+async function getProduct(identifier) {
+  let product = await prisma.product.findFirst({
+    where: { slug: identifier },
+    include: { categories: true },
+  });
 
-export default function ProductDetailPage() {
-  const params = useParams();
-  const [product, setProduct] = useState(null);
-  const [settings, setSettings] = useState({ hotline: '0900000000', zaloUrl: 'https://zalo.me', isOnlineSales: false });
-  const [loading, setLoading] = useState(true);
+  if (!product) {
+    product = await prisma.product.findFirst({
+      where: { code: identifier },
+      include: { categories: true },
+    });
+  }
 
-  useEffect(() => {
-    fetch(`/api/products/${params.code}`)
-      .then(async (res) => {
-        // Kiểm tra xem phản hồi có phải là JSON không trước khi parse
-        const contentType = res.headers.get("content-type");
-        if (contentType && contentType.includes("application/json")) {
-          return res.json();
-        }
-        throw new Error("Phản hồi không phải là JSON");
-      })
-      .then((data) => {
-        if (data && !data.error) setProduct(data);
-      })
-      .catch((err) => {
-        console.error("Lỗi khi tải sản phẩm:", err);
-        setProduct(null);
-      })
-      .finally(() => setLoading(false));
+  if (!product) {
+    const numericId = Number(identifier);
+    if (!Number.isNaN(numericId)) {
+      product = await prisma.product.findUnique({
+        where: { id: numericId },
+        include: { categories: true },
+      });
+    }
+  }
 
-    fetch('/api/settings')
-      .then((res) => res.json())
-      .then((data) => data && setSettings(data));
-  }, [params.code]);
+  return product;
+}
 
-  if (loading) return <div className="min-h-screen flex items-center justify-center text-sm text-gray-500">Đang tải sản phẩm...</div>;
-  if (!product) return <div className="min-h-screen flex items-center justify-center text-sm text-red-500">Sản phẩm không tồn tại hoặc đã bị ẩn.</div>;
+// Tiêu đề & mô tả trang tự động theo từng sản phẩm, tốt hơn cho SEO
+export async function generateMetadata({ params }) {
+  const { code } = await params;
+  const product = await getProduct(code);
 
-  const cleanPhone = settings.hotline.replace(/\D/g, '');
-  const zaloMessage = encodeURIComponent(`Chào shop, tôi muốn hỏi mua sản phẩm: ${product.name} (Mã: ${product.code})`);
+  if (!product) {
+    return { title: "Không tìm thấy sản phẩm | Hyleaf" };
+  }
+
+  return {
+    title: `${product.name} | Hyleaf Trà Oolong`,
+    description: product.description || `Mua ${product.name} chính hãng tại Hyleaf.`,
+  };
+}
+
+export default async function ProductDetailPage({ params }) {
+  const { code } = await params;
+  const product = await getProduct(code);
+
+  if (!product) {
+    notFound();
+  }
+
+  const settings = await prisma.setting.findUnique({ where: { id: 1 } });
+  const hotline = settings?.hotline || "0900000000";
+  const isOnlineSales = settings?.isOnlineSales ?? false;
+
+  const cleanPhone = hotline.replace(/\D/g, "");
+  const zaloMessage = encodeURIComponent(
+    `Chào shop, tôi muốn hỏi mua sản phẩm: ${product.name} (Mã: ${product.code})`
+  );
   const zaloLink = `https://zalo.me/${cleanPhone}?text=${zaloMessage}`;
 
   return (
@@ -46,16 +70,23 @@ export default function ProductDetailPage() {
       {/* Header đơn giản */}
       <header className="bg-white border-b py-4 px-6 mb-8 shadow-sm">
         <div className="max-w-5xl mx-auto flex justify-between items-center">
-          <a href="/" className="text-sm font-bold text-blue-600">← Quay lại trang chủ</a>
-          <span className="text-xs font-mono font-bold bg-gray-100 px-3 py-1 rounded-full">Mã SP: {product.code}</span>
+          <Link href="/" className="text-sm font-bold text-blue-600">← Quay lại trang chủ</Link>
+          <span className="text-sm font-mono font-bold bg-gray-100 px-3 py-1 rounded-full">Mã SP: {product.code}</span>
         </div>
       </header>
 
       <main className="max-w-5xl mx-auto px-4">
         <div className="bg-white rounded-2xl border p-6 md:p-8 shadow-sm grid grid-cols-1 md:grid-cols-2 gap-8">
           {/* Ảnh SP */}
-          <div className="aspect-square bg-gray-100 rounded-xl overflow-hidden border">
-            <img src={product.image || 'https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=500&q=80'} alt={product.name} className="w-full h-full object-cover" />
+          <div className="relative aspect-square bg-gray-100 rounded-xl overflow-hidden border">
+            <Image
+              src={product.image || "/placeholder.jpg"}
+              alt={product.name}
+              fill
+              priority
+              sizes="(min-width: 768px) 50vw, 100vw"
+              className="object-cover"
+            />
           </div>
 
           {/* Thông tin SP */}
@@ -63,25 +94,25 @@ export default function ProductDetailPage() {
             <div>
               <div className="flex flex-wrap gap-2 mb-3">
                 {product.categories?.map((c) => (
-                  <span key={c.id} className="bg-blue-50 text-blue-700 text-xs font-bold px-2.5 py-1 rounded-full">
+                  <span key={c.id} className="bg-blue-50 text-blue-700 text-sm font-bold px-2.5 py-1 rounded-full">
                     {c.name}
                   </span>
                 ))}
               </div>
               <h1 className="text-2xl md:text-3xl font-extrabold text-gray-900 mb-4">{product.name}</h1>
-              
+
               <div className="bg-red-50 border border-red-100 rounded-xl p-4 mb-6">
-                <span className="text-xs text-red-500 block font-semibold mb-1">Giá bán:</span>
+                <span className="text-sm text-red-500 block font-semibold mb-1">Giá bán:</span>
                 <span className="text-2xl font-black text-red-600">
-                  {formatPrice(product.price, settings.isOnlineSales)}
+                  {formatPrice(product.price, isOnlineSales)}
                 </span>
               </div>
 
               {/* Mô tả chi tiết sản phẩm */}
               <div className="mb-6">
-                <h3 className="text-sm font-bold text-gray-900 uppercase tracking-wider mb-2 border-b pb-1">Mô tả sản phẩm</h3>
+                <h3 className="text-base font-bold text-gray-900 uppercase tracking-wider mb-2 border-b pb-1">Mô tả sản phẩm</h3>
                 <p className="text-sm text-gray-600 leading-relaxed whitespace-pre-line">
-                  {product.description || 'Chưa có thông tin mô tả chi tiết cho sản phẩm này.'}
+                  {product.description || "Chưa có thông tin mô tả chi tiết cho sản phẩm này."}
                 </p>
               </div>
             </div>
@@ -97,10 +128,10 @@ export default function ProductDetailPage() {
                 💬 Nhắn Zalo Đặt Hàng Ngay
               </a>
               <a
-                href={`tel:${settings.hotline}`}
+                href={`tel:${hotline}`}
                 className="w-full bg-gray-100 hover:bg-gray-200 text-gray-800 font-bold py-3 rounded-xl text-center block transition text-sm"
               >
-                📞 Gọi Hotline: {settings.hotline}
+                📞 Gọi Hotline: {hotline}
               </a>
             </div>
           </div>

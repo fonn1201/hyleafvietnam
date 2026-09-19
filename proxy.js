@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { verifyAdminToken, hasPermission, ADMIN_COOKIE_NAME } from '@/lib/auth';
 
-// Chạy middleware trên Node.js runtime (thay vì Edge) để dùng được thư viện
+// Chạy trên Node.js runtime (thay vì Edge) để dùng được thư viện
 // jsonwebtoken một cách ổn định.
 export const runtime = 'nodejs';
 
@@ -39,7 +39,7 @@ function matchRule(pathname) {
   return PERMISSION_RULES.find((rule) => pathname.startsWith(rule.prefix));
 }
 
-export function middleware(request) {
+export function proxy(request) {
   const { pathname } = request.nextUrl;
   const method = request.method.toUpperCase();
 

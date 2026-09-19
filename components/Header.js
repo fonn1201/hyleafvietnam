@@ -21,16 +21,24 @@ export default function Header() {
       .then((d) => Array.isArray(d) && setCategories(d));
   }, []);
 
-  // Tự động xóa trắng từ khóa, đóng gợi ý và đóng menu mobile mỗi khi chuyển trang
-  useEffect(() => {
+  // Tự động xóa trắng từ khóa, đóng gợi ý và đóng menu mobile mỗi khi chuyển trang.
+  // Dùng pattern "điều chỉnh state khi prop thay đổi" ngay trong lúc render
+  // (theo khuyến nghị chính thức của React) thay vì trong useEffect, để tránh
+  // một vòng render + effect thừa và lỗi lint "setState trong effect".
+  const [prevPathname, setPrevPathname] = useState(pathname);
+  if (prevPathname !== pathname) {
+    setPrevPathname(pathname);
     setSearchQuery('');
     setSuggestions([]);
     setIsOpen(false);
     setIsMobileMenuOpen(false);
-  }, [pathname]);
+  }
 
-  // Lọc danh sách gợi ý khi gõ từ khóa
+  // Lọc danh sách gợi ý khi gõ từ khóa — tìm kiếm được lọc ngay tại server
+  // (xem app/api/products/route.js), chỉ giới hạn 6 gợi ý mỗi lần gõ.
   useEffect(() => {
+    const controller = new AbortController();
+
     const fetchSuggestions = async () => {
       if (!searchQuery.trim()) {
         setSuggestions([]);
@@ -39,31 +47,25 @@ export default function Header() {
       }
 
       try {
-        const res = await fetch('/api/products');
+        const res = await fetch(
+          `/api/products?search=${encodeURIComponent(searchQuery.trim())}&limit=6`,
+          { signal: controller.signal }
+        );
         const products = await res.json();
-        const term = searchQuery.trim();
-
-        const removeAccents = (str) => {
-          return str.normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/đ/g, 'd').replace(/Đ/g, 'D');
-        };
-        const normalizedTerm = removeAccents(term).toLowerCase();
-
-        // Lọc theo tên có dấu (hoặc không dấu tùy ý) và mã sản phẩm
-        const filtered = products.filter((p) => {
-          const matchName = p.name && removeAccents(p.name).toLowerCase().includes(normalizedTerm);
-          const matchCode = p.code && p.code.toLowerCase().includes(term.toLowerCase());
-          return matchName || matchCode;
-        });
-
-        setSuggestions(filtered);
+        setSuggestions(Array.isArray(products) ? products : []);
         setIsOpen(true);
       } catch (error) {
-        console.error('Lỗi gợi ý tìm kiếm:', error);
+        if (error.name !== 'AbortError') {
+          console.error('Lỗi gợi ý tìm kiếm:', error);
+        }
       }
     };
 
     const delayDebounce = setTimeout(fetchSuggestions, 300);
-    return () => clearTimeout(delayDebounce);
+    return () => {
+      clearTimeout(delayDebounce);
+      controller.abort();
+    };
   }, [searchQuery]);
 
   // Đóng hộp gợi ý khi click ra ngoài
@@ -128,22 +130,25 @@ export default function Header() {
                 </button>
               </form>
 
-              {/* Khung gợi ý sản phẩm hiển thị phía dưới */}
+              {/* Khung gợi ý sản phẩm hiển thị phía dưới — chiều rộng cố định để
+                  không bị bóp méo theo ô tìm kiếm (vốn khá hẹp) */}
               {isOpen && suggestions.length > 0 && (
-                <div className="absolute left-0 right-0 mt-2 bg-[#FFFBF3] text-[#12412C] rounded-xl shadow-2xl border border-[#12412C]/10 max-h-80 overflow-y-auto z-50">
+                <div className="absolute left-0 top-full mt-2 w-80 max-w-[90vw] bg-[#FFFBF3] text-[#12412C] rounded-xl shadow-2xl border border-[#12412C]/10 max-h-96 overflow-y-auto z-50">
                   {suggestions.map((product) => (
                     <Link
                       key={product.id}
                       href={`/products/${product.slug}`}
                       onClick={() => setIsOpen(false)}
-                      className="flex items-center gap-3 px-3.5 py-2.5 hover:bg-amber-100/60 border-b border-gray-100 last:border-none transition"
+                      className="flex flex-row items-center gap-3 px-3.5 py-2.5 hover:bg-amber-100/60 border-b border-gray-100 last:border-none transition"
                     >
-                      {product.image ? (
-                        <Image src={product.image} alt={product.name} width={40} height={40} className="w-10 h-10 object-cover rounded-lg flex-shrink-0" />
-                      ) : (
-                        <div className="w-10 h-10 bg-gray-200 rounded-lg flex items-center justify-center text-[11px] text-gray-500 flex-shrink-0">Ảnh</div>
-                      )}
-                      <div className="overflow-hidden">
+                      <div className="relative w-12 h-12 flex-shrink-0 rounded-lg overflow-hidden bg-gray-200">
+                        {product.image ? (
+                          <Image src={product.image} alt={product.name} fill sizes="48px" className="object-cover" />
+                        ) : (
+                          <div className="w-full h-full flex items-center justify-center text-[10px] text-gray-500">Ảnh</div>
+                        )}
+                      </div>
+                      <div className="min-w-0 flex-1">
                         <p className="text-sm font-bold text-[#12412C] truncate">{product.name}</p>
                         <p className="text-xs text-amber-800 font-semibold">
                           Mã: {product.code} - {Number(product.price).toLocaleString('vi-VN')} đ
@@ -156,7 +161,7 @@ export default function Header() {
 
               {/* Thông báo khi không tìm thấy */}
               {isOpen && searchQuery.trim() !== '' && suggestions.length === 0 && (
-                <div className="absolute left-0 right-0 mt-2 bg-[#FFFBF3] text-[#12412C] rounded-xl shadow-2xl border border-[#12412C]/10 p-3 text-center text-sm text-gray-600 z-50">
+                <div className="absolute left-0 top-full mt-2 w-80 max-w-[90vw] bg-[#FFFBF3] text-[#12412C] rounded-xl shadow-2xl border border-[#12412C]/10 p-3 text-center text-sm text-gray-600 z-50">
                   Không tìm thấy sản phẩm phù hợp
                 </div>
               )}

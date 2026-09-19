@@ -1,5 +1,6 @@
 import { prisma } from "@/lib/prisma";
 import Link from "next/link";
+import Image from "next/image";
 
 export default async function NewsPage() {
   // Sửa từ prisma.post thành prisma.news
@@ -19,14 +20,16 @@ export default async function NewsPage() {
           newsList.map((item) => (
             <div key={item.id} className="bg-white p-4 rounded-2xl shadow-sm border border-gray-100 flex gap-4 items-center">
               {item.image && (
-                <img src={item.image} alt={item.title} className="w-32 h-24 object-cover rounded-xl flex-shrink-0" />
+                <div className="relative w-32 h-24 rounded-xl overflow-hidden flex-shrink-0 bg-gray-100">
+                  <Image src={item.image} alt={item.title} fill sizes="128px" className="object-cover" />
+                </div>
               )}
               <div className="flex-1">
-                <span className="text-[10px] text-gray-400">Ngày đăng: {new Date(item.createdAt).toLocaleDateString('vi-VN')}</span>
+                <span className="text-sm text-gray-400">Ngày đăng: {new Date(item.createdAt).toLocaleDateString('vi-VN')}</span>
                 <h2 className="text-lg font-bold text-gray-800 hover:text-[#003B46] mb-1">
                   <Link href={`/news/${item.slug}`}>{item.title}</Link>
                 </h2>
-                <p className="text-xs text-gray-600 line-clamp-2">{item.summary}</p>
+                <p className="text-sm text-gray-600 line-clamp-2">{item.summary}</p>
               </div>
             </div>
           ))
