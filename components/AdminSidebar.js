@@ -16,7 +16,10 @@ const menuItems = [
 export default function AdminSidebar({ permissions = [] }) {
   const pathname = usePathname();
   const router = useRouter();
-  const [userProfile, setUserProfile] = useState({ name: 'Admin', email: '' });
+  // Không đặt sẵn tên/email giả — để trống cho tới khi lấy được dữ liệu
+  // thật, tránh hiển thị thông tin trông giống người đã đăng nhập trong
+  // lúc thực tế còn đang tải (hoặc chưa đăng nhập).
+  const [userProfile, setUserProfile] = useState(null);
 
   useEffect(() => {
     // Lấy thông tin profile hiện tại để hiển thị tên và avatar chữ cái đầu
@@ -72,7 +75,7 @@ export default function AdminSidebar({ permissions = [] }) {
               <Link
                 key={item.href}
                 href={item.href}
-                className={`flex items-center gap-2 p-3 text-xs font-bold rounded-xl transition ${
+                className={`flex items-center gap-2 p-3 text-sm font-bold rounded-xl transition ${
                   isActive ? 'bg-blue-600 text-white' : 'text-gray-300 hover:bg-white/10'
                 }`}
               >
@@ -92,20 +95,20 @@ export default function AdminSidebar({ permissions = [] }) {
           }`}
         >
           <div className="w-9 h-9 rounded-full bg-blue-600 text-white font-bold flex items-center justify-center text-sm flex-shrink-0 shadow-inner">
-            {getInitial(userProfile.name)}
+            {getInitial(userProfile?.name)}
           </div>
           <div className="overflow-hidden">
-            <p className="text-xs font-bold text-white truncate">{userProfile.name || 'Quản Trị Viên'}</p>
-            <p className="text-[10px] text-gray-400 truncate">{userProfile.email || 'admin@gmail.com'}</p>
+            <p className="text-sm font-bold text-white truncate">{userProfile?.name || 'Đang tải...'}</p>
+            <p className="text-sm text-gray-400 truncate">{userProfile?.email || ''}</p>
           </div>
         </Link>
 
-        <Link href="/" className="flex items-center gap-2 px-3 py-2 text-xs text-gray-400 hover:text-white transition rounded-xl hover:bg-white/5">
+        <Link href="/" className="flex items-center gap-2 px-3 py-2 text-sm text-gray-400 hover:text-white transition rounded-xl hover:bg-white/5">
           ← Xem Trang Chủ
         </Link>
         <button
           onClick={handleLogout}
-          className="w-full flex items-center gap-2 px-3 py-2 text-xs font-bold text-red-400 hover:bg-red-500/10 transition rounded-xl text-left"
+          className="w-full flex items-center gap-2 px-3 py-2 text-sm font-bold text-red-400 hover:bg-red-500/10 transition rounded-xl text-left"
         >
           🚪 Đăng Xuất Hệ Thống
         </button>
