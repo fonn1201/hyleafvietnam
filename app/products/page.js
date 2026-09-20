@@ -6,9 +6,15 @@ import Pagination from "@/components/Pagination";
 
 const PAGE_SIZE = 12;
 
+const FILTER_CONFIG = {
+  bestseller: { where: { isBestSeller: true }, title: "SẢN PHẨM BÁN CHẠY" },
+  gift: { where: { isGift: true }, title: "GIẢI PHÁP & QUÀ TẶNG" },
+};
+
 export default async function ProductsPage({ searchParams }) {
   const params = await searchParams;
   const search = params?.search || "";
+  const filter = FILTER_CONFIG[params?.filter] ? params.filter : "";
   const currentPage = Math.max(1, parseInt(params?.page, 10) || 1);
 
   // Hàm hỗ trợ bỏ dấu tiếng Việt
@@ -16,10 +22,17 @@ export default async function ProductsPage({ searchParams }) {
     return str.normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/đ/g, 'd').replace(/Đ/g, 'D');
   };
 
+  // Lọc theo "Bán chạy" / "Quà tặng" (tick từ trang admin) ngay ở tầng DB
+  // khi có, ví dụ khi khách bấm "Xem tất cả" từ khối tương ứng ở trang chủ
+  const where = {
+    isVisible: true,
+    ...(filter ? FILTER_CONFIG[filter].where : {}),
+  };
+
   // Fetch song song danh sách sản phẩm hiển thị và cài đặt
   const [allProducts, setting] = await Promise.all([
     prisma.product.findMany({
-      where: { isVisible: true },
+      where,
       orderBy: { createdAt: "desc" },
     }),
     prisma.setting.findUnique({ where: { id: 1 } })
@@ -47,17 +60,34 @@ export default async function ProductsPage({ searchParams }) {
   const buildHref = (page) => {
     const qs = new URLSearchParams();
     if (search) qs.set("search", search);
+    if (filter) qs.set("filter", filter);
     if (page > 1) qs.set("page", String(page));
     const queryString = qs.toString();
     return queryString ? `/products?${queryString}` : "/products";
   };
 
+  const pageTitle = search
+    ? `KẾT QUẢ TÌM KIẾM: "${search}"`
+    : filter
+    ? FILTER_CONFIG[filter].title
+    : "DANH SÁCH TẤT CẢ SẢN PHẨM";
+
   return (
     <div className="max-w-6xl mx-auto px-4 py-8 bg-[#FAF8F5] min-h-screen">
       <div className="flex justify-between items-center mb-6 border-b border-[#12412C]/10 pb-4">
         <div>
+          {/* Breadcrumb nhỏ khi đang lọc, để khách biết cách quay lại xem tất cả */}
+          {filter && !search && (
+            <div className="flex items-center gap-2 text-sm text-gray-500 mb-1">
+              <Link href="/" className="hover:underline">Trang chủ</Link>
+              <span>/</span>
+              <Link href="/products" className="hover:underline">Tất cả sản phẩm</Link>
+              <span>/</span>
+              <span className="text-[#12412C] font-bold">{FILTER_CONFIG[filter].title}</span>
+            </div>
+          )}
           <h1 className="text-2xl font-black text-[#12412C] uppercase">
-            {search ? `KẾT QUẢ TÌM KIẾM: "${search}"` : "DANH SÁCH TẤT CẢ SẢN PHẨM"}
+            {pageTitle}
           </h1>
           <p className="text-sm text-gray-500 mt-1">
             Tìm thấy {filteredProducts.length} sản phẩm phù hợp
