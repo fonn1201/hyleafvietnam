@@ -1,9 +1,11 @@
 import { NextResponse } from 'next/server';
 import { verifyAdminToken, hasPermission, ADMIN_COOKIE_NAME } from '@/lib/auth';
 
-// Chạy trên Node.js runtime (thay vì Edge) để dùng được thư viện
-// jsonwebtoken một cách ổn định.
-export const runtime = 'nodejs';
+// Lưu ý: proxy.js (thay thế middleware.js từ Next.js 16) LUÔN chạy trên
+// Node.js runtime theo mặc định — không được phép khai báo lại
+// `export const runtime = ...` như middleware.js cũ nữa, khai báo sẽ
+// khiến build lỗi. Vì vậy thư viện jsonwebtoken vẫn hoạt động ổn định
+// mà không cần dòng cấu hình này.
 
 // Ánh xạ từ tiền tố đường dẫn (cả trang /admin và API tương ứng) sang quyền cần có.
 // 'null' nghĩa là chỉ cần đăng nhập hợp lệ, không yêu cầu quyền module cụ thể.
