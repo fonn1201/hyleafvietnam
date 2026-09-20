@@ -113,7 +113,7 @@ export default function Header() {
 
           <div className="hidden md:flex md:col-span-3 items-center justify-between gap-4">
             {/* Thanh tìm kiếm có khung gợi ý */}
-            <div className="relative flex-1 max-w-xs" ref={searchRef}>
+            <div className="relative flex-1 max-w-sm" ref={searchRef}>
               <form onSubmit={handleSearchSubmit} className="relative">
                 <input
                   type="text"
@@ -185,10 +185,6 @@ export default function Header() {
               <Link href="/posts" className="hover:text-amber-200 transition">Góc Thưởng Trà</Link>
               <Link href="/#about" className="hover:text-amber-200 transition">Giới Thiệu</Link>
             </nav>
-
-            <a href="https://zalo.me" target="_blank" rel="noreferrer" className="bg-[#FFFBF3] text-[#12412C] font-bold text-sm px-4 py-2.5 rounded-full shadow hover:bg-amber-100 transition">
-              💬 Chat Zalo
-            </a>
           </div>
         </div>
 
