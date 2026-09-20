@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
+import { validateImageFile } from '@/lib/uploadValidation';
 import Image from 'next/image';
 import WithPermission from '@/components/WithPermission';
 
@@ -33,6 +34,14 @@ export default function SlidesManager({ initialSlides = [], userPermissions = []
   const handleImageUpload = async (e) => {
     const file = e.target.files[0];
     if (!file) return;
+
+    const { valid, error } = validateImageFile(file);
+    if (!valid) {
+      alert(error);
+      e.target.value = '';
+      return;
+    }
+
     setUploading(true);
 
     const bodyData = new FormData();
