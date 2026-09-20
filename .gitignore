@@ -39,3 +39,11 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# database (SQLite dev.db chứa dữ liệu thật - KHÔNG commit lên repo, đặc
+# biệt nguy hiểm với repo public vì lộ mật khẩu admin đã băm, email, dữ
+# liệu sản phẩm/tin tức thật)
+/prisma/*.db
+/prisma/*.db-journal
+*.sqlite
+*.sqlite3
