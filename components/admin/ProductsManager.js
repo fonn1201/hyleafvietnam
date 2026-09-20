@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useRef } from 'react';
+import { validateImageFile } from '@/lib/uploadValidation';
 import { generateSlug } from '@/lib/slugify';
 import * as XLSX from 'xlsx';
 import Image from 'next/image';
@@ -65,6 +66,14 @@ export default function ProductsManager({ initialProducts = [], initialCategorie
   const handleImageUpload = async (e) => {
     const file = e.target.files[0];
     if (!file) return;
+
+    const { valid, error } = validateImageFile(file);
+    if (!valid) {
+      alert(error);
+      e.target.value = '';
+      return;
+    }
+
     setUploading(true);
 
     const bodyData = new FormData();
