@@ -31,7 +31,7 @@ export default function HeroSlider({ slides = [] }) {
 
   return (
     <div className="relative w-full h-[320px] md:h-[360px] rounded-2xl overflow-hidden shadow-md group">
-      <Link href={current.link || '/products'}>
+      <Link href={current.link || '/products'} className="relative block w-full h-full">
         <Image
           src={current.image}
           alt={current.title || "Banner"}
