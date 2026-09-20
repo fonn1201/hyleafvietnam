@@ -92,6 +92,7 @@ export default async function HomePage() {
           subtitle="Những dòng trà được yêu thích và lựa chọn nhiều nhất"
           products={bestSellers}
           isOnlineSales={isOnlineSales}
+          viewAllLink="/products?filter=bestseller"
         />
 
         <ProductBlock
@@ -100,6 +101,7 @@ export default async function HomePage() {
           products={giftProducts}
           isDarkBg
           isOnlineSales={isOnlineSales}
+          viewAllLink="/products?filter=gift"
         />
 
       </div>
