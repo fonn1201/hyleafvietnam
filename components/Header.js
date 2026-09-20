@@ -112,6 +112,24 @@ export default function Header() {
           </div>
 
           <div className="hidden md:flex md:col-span-3 items-center justify-between gap-4">
+            <nav className="flex items-center space-x-5 text-sm font-bold uppercase tracking-wider">
+              <Link href="/" className="hover:text-amber-200 transition">Trang Chủ</Link>
+              <div className="relative group py-2">
+                <Link href="/products" className="hover:text-amber-200 transition">Sản Phẩm ▾</Link>
+                {categories.length > 0 && (
+                  <div className="absolute top-full left-0 hidden group-hover:block bg-[#FFFBF3] text-[#12412C] shadow-xl rounded-xl py-2 w-48 border border-[#12412C]/10 normal-case">
+                    {categories.map((cat) => (
+                      <Link key={cat.slug} href={`/categories/${cat.slug}`} className="block px-4 py-2 text-sm font-bold hover:bg-[#12412C] hover:text-[#FFFBF3]">
+                        {cat.name}
+                      </Link>
+                    ))}
+                  </div>
+                )}
+              </div>
+              <Link href="/news" className="hover:text-amber-200 transition">Tin Tức Shop</Link>
+              <Link href="/posts" className="hover:text-amber-200 transition">Góc Thưởng Trà</Link>
+              <Link href="/#about" className="hover:text-amber-200 transition">Giới Thiệu</Link>
+            </nav>
             {/* Thanh tìm kiếm có khung gợi ý */}
             <div className="relative flex-1 max-w-sm" ref={searchRef}>
               <form onSubmit={handleSearchSubmit} className="relative">
@@ -167,24 +185,6 @@ export default function Header() {
               )}
             </div>
 
-            <nav className="flex items-center space-x-5 text-sm font-bold uppercase tracking-wider">
-              <Link href="/" className="hover:text-amber-200 transition">Trang Chủ</Link>
-              <div className="relative group py-2">
-                <Link href="/products" className="hover:text-amber-200 transition">Sản Phẩm ▾</Link>
-                {categories.length > 0 && (
-                  <div className="absolute top-full left-0 hidden group-hover:block bg-[#FFFBF3] text-[#12412C] shadow-xl rounded-xl py-2 w-48 border border-[#12412C]/10 normal-case">
-                    {categories.map((cat) => (
-                      <Link key={cat.slug} href={`/categories/${cat.slug}`} className="block px-4 py-2 text-sm font-bold hover:bg-[#12412C] hover:text-[#FFFBF3]">
-                        {cat.name}
-                      </Link>
-                    ))}
-                  </div>
-                )}
-              </div>
-              <Link href="/news" className="hover:text-amber-200 transition">Tin Tức Shop</Link>
-              <Link href="/posts" className="hover:text-amber-200 transition">Góc Thưởng Trà</Link>
-              <Link href="/#about" className="hover:text-amber-200 transition">Giới Thiệu</Link>
-            </nav>
           </div>
         </div>
 
