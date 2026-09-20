@@ -23,12 +23,12 @@ export default function ProductBlock({
   return (
     <section className={`py-12 px-4 border-b border-[#12412C]/10 rounded-2xl ${bgStyle}`}>
       <div className="max-w-6xl mx-auto">
-        <div className="flex justify-between items-end mb-8">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between mb-8">
           <div>
-            <h2 className="text-2xl md:text-3xl font-extrabold uppercase tracking-wide">{title}</h2>
+            <h2 className="text-xl sm:text-2xl md:text-3xl font-extrabold uppercase tracking-wide">{title}</h2>
             {subtitle && <p className={`text-sm mt-1 ${isDarkBg ? 'text-amber-100' : 'text-gray-600'}`}>{subtitle}</p>}
           </div>
-          <Link href={viewAllLink} className={`text-sm font-bold underline ${isDarkBg ? 'hover:text-amber-200' : 'hover:text-emerald-700'}`}>
+          <Link href={viewAllLink} className={`text-sm font-bold underline shrink-0 self-start sm:self-auto ${isDarkBg ? 'hover:text-amber-200' : 'hover:text-emerald-700'}`}>
             Xem tất cả →
           </Link>
         </div>
