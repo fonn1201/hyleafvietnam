@@ -68,7 +68,7 @@ export default function ProductBlock({
                   </span>
                   <AddToCartButton
                     product={item}
-                    className="text-xs bg-[#12412C] text-[#FFFBF3] font-semibold px-2.5 py-1.5 rounded-lg hover:bg-emerald-900 transition shrink-0"
+                    className={`text-xs bg-[#12412C] text-[#FFFBF3] font-semibold px-2.5 py-1.5 rounded-lg hover:bg-emerald-900 transition shrink-0 ${isOnlineSales ? '' : 'hidden'}`}
                   />
                 </div>
               </Link>
