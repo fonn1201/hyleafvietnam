@@ -24,29 +24,27 @@ export async function GET() {
 export async function PUT(request) {
   try {
     const body = await request.json();
-    
+
+    const data = {
+      siteName: body.siteName || '',
+      hotline: body.hotline || '',
+      zaloUrl: body.zaloUrl || '',
+      fanpage: body.fanpage || '',
+      address: body.address || '',
+      aboutUs: body.aboutUs || '',
+      isOnlineSales: Boolean(body.isOnlineSales),
+      bankName: body.bankName || null,
+      bankBin: body.bankBin || null,
+      bankAccountNumber: body.bankAccountNumber || null,
+      bankAccountHolder: body.bankAccountHolder || null,
+      emailNotifyStatuses: body.emailNotifyStatuses || 'pending,confirmed,shipping,completed,cancelled',
+    };
+
     // Dùng upsert: Cập nhật nếu đã có id=1, nếu chưa có thì tạo mới
     const updatedSetting = await prisma.setting.upsert({
       where: { id: 1 },
-      update: {
-        siteName: body.siteName || '',
-        hotline: body.hotline || '',
-        zaloUrl: body.zaloUrl || '',
-        fanpage: body.fanpage || '',
-        address: body.address || '',
-        aboutUs: body.aboutUs || '',
-        isOnlineSales: Boolean(body.isOnlineSales),
-      },
-      create: {
-        id: 1,
-        siteName: body.siteName || '',
-        hotline: body.hotline || '',
-        zaloUrl: body.zaloUrl || '',
-        fanpage: body.fanpage || '',
-        address: body.address || '',
-        aboutUs: body.aboutUs || '',
-        isOnlineSales: Boolean(body.isOnlineSales),
-      }
+      update: data,
+      create: { id: 1, ...data },
     });
 
     return NextResponse.json(updatedSetting);

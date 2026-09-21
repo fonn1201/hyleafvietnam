@@ -147,7 +147,9 @@ export default async function ProductsPage({ searchParams }) {
                     {formatPrice(product.price, isOnlineSales)}
                   </span>
                   <div className="flex items-center gap-1.5">
-                    <AddToCartButton product={product} className="flex-1 text-sm font-bold px-3 py-1.5 rounded-full bg-white text-[#12412C] border border-[#12412C]/20 hover:bg-[#12412C]/5 transition text-center" />
+                    {isOnlineSales && (
+                      <AddToCartButton product={product} className="flex-1 text-sm font-bold px-3 py-1.5 rounded-full bg-white text-[#12412C] border border-[#12412C]/20 hover:bg-[#12412C]/5 transition text-center" />
+                    )}
                     <Link
                       href={`/products/${product.slug}`}
                       className="flex-1 bg-[#12412C] text-[#FFFBF3] text-sm font-bold px-3 py-1.5 rounded-full hover:bg-emerald-900 transition text-center"

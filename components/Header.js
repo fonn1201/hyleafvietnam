@@ -8,6 +8,7 @@ import { useCart } from './CartProvider';
 
 export default function Header() {
   const [categories, setCategories] = useState([]);
+  const [isOnlineSales, setIsOnlineSales] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [suggestions, setSuggestions] = useState([]);
   const [isOpen, setIsOpen] = useState(false);
@@ -21,6 +22,15 @@ export default function Header() {
     fetch('/api/categories')
       .then((r) => r.json())
       .then((d) => Array.isArray(d) && setCategories(d));
+  }, []);
+
+  // Chỉ hiện icon giỏ hàng khi shop đang bật "Mở bán online" (cài đặt
+  // chung) — tắt thì giỏ hàng/đặt hàng không có ý nghĩa, giữ đồng bộ với
+  // việc giá sản phẩm cũng đang hiện "Liên hệ" thay vì giá thật.
+  useEffect(() => {
+    fetch('/api/settings')
+      .then((r) => r.json())
+      .then((d) => setIsOnlineSales(!!d?.isOnlineSales));
   }, []);
 
   // Tự động xóa trắng từ khóa, đóng gợi ý và đóng menu mobile mỗi khi chuyển trang.
@@ -104,24 +114,26 @@ export default function Header() {
                 className="h-12 md:h-14 w-auto object-contain transition-transform group-hover:scale-105"
               />
             </Link>
-            <div className="flex items-center gap-1">
-              <Link href="/cart" className="relative p-2 text-[#FFFBF3]" aria-label="Giỏ hàng">
-                <span className="text-2xl">🛒</span>
-                <span
-                  suppressHydrationWarning
-                  className={`absolute -top-0.5 -right-0.5 bg-amber-400 text-[#12412C] text-[11px] font-bold rounded-full w-5 h-5 items-center justify-center ${totalItems > 0 ? 'flex' : 'hidden'}`}
-                >
-                  {totalItems > 9 ? '9+' : totalItems}
-                </span>
-              </Link>
-              <button 
-                onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)} 
-                className="md:hidden p-2 text-[#FFFBF3] text-2xl focus:outline-none"
-                aria-label="Menu"
-              >
-                {isMobileMenuOpen ? '✕' : '☰'}
-              </button>
-            </div>
+            {isOnlineSales && (
+              <div className="flex items-center gap-1 md:hidden">
+                <Link href="/cart" className="relative p-2 text-[#FFFBF3]" aria-label="Giỏ hàng">
+                  <span className="text-2xl">🛒</span>
+                  <span
+                    suppressHydrationWarning
+                    className={`absolute -top-0.5 -right-0.5 bg-amber-400 text-[#12412C] text-[11px] font-bold rounded-full w-5 h-5 items-center justify-center ${totalItems > 0 ? 'flex' : 'hidden'}`}
+                  >
+                    {totalItems > 9 ? '9+' : totalItems}
+                  </span>
+                </Link>
+              </div>
+            )}
+            <button 
+              onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)} 
+              className="md:hidden p-2 text-[#FFFBF3] text-2xl focus:outline-none"
+              aria-label="Menu"
+            >
+              {isMobileMenuOpen ? '✕' : '☰'}
+            </button>
           </div>
 
           <div className="hidden md:flex md:col-span-3 items-center justify-between gap-4">
@@ -198,6 +210,17 @@ export default function Header() {
               )}
             </div>
 
+            {isOnlineSales && (
+              <Link href="/cart" className="relative p-2 text-[#FFFBF3] hover:text-amber-200 transition shrink-0" aria-label="Giỏ hàng">
+                <span className="text-2xl">🛒</span>
+                <span
+                  suppressHydrationWarning
+                  className={`absolute -top-0.5 -right-0.5 bg-amber-400 text-[#12412C] text-[11px] font-bold rounded-full w-5 h-5 items-center justify-center ${totalItems > 0 ? 'flex' : 'hidden'}`}
+                >
+                  {totalItems > 9 ? '9+' : totalItems}
+                </span>
+              </Link>
+            )}
           </div>
         </div>
 
