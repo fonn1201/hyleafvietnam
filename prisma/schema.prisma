@@ -20,6 +20,7 @@ model Product {
   isBestSeller Boolean    @default(false) // Tích chọn hiển thị khối Bán Chạy
   isGift       Boolean    @default(false) // Tích chọn hiển thị khối Quà Tặng
   categories   Category[]
+  orderItems   OrderItem[]
   createdAt    DateTime   @default(now())
 }
 
@@ -40,7 +41,19 @@ model Setting {
   address       String   @default("")
   aboutUs       String   @default("")
   isOnlineSales Boolean  @default(false) // Tùy chọn Mở bán online
-  updatedAt     DateTime @updatedAt
+
+  // Thông tin ngân hàng nhận chuyển khoản, dùng để tạo mã QR VietQR khi
+  // khách chọn thanh toán chuyển khoản lúc đặt hàng
+  bankName          String? // Tên hiển thị, vd "MB Bank"
+  bankBin           String? // Mã BIN ngân hàng theo chuẩn VietQR/Napas, vd "970422"
+  bankAccountNumber String?
+  bankAccountHolder String? // Viết không dấu, đúng như trên tài khoản ngân hàng
+
+  // Danh sách trạng thái đơn hàng sẽ gửi email cho khách khi chuyển sang,
+  // lưu dạng chuỗi cách nhau bằng dấu phẩy (vd: "pending,confirmed,shipping,completed,cancelled")
+  emailNotifyStatuses String @default("pending,confirmed,shipping,completed,cancelled")
+
+  updatedAt DateTime @updatedAt
 }
 
 model Post {
@@ -86,4 +99,65 @@ model User {
   permissions String   // Lưu các quyền dạng chuỗi cách nhau bằng dấu phẩy, ví dụ: "products,posts"
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
+}
+
+// Khách hàng, nhận diện theo số điện thoại (mỗi SĐT là 1 khách hàng duy
+// nhất). Đặt hàng không cần tài khoản đăng nhập (guest checkout) - record
+// này chỉ để lưu lịch sử và tra cứu, tự tạo/cập nhật khi có đơn hàng mới.
+model Customer {
+  id        Int      @id @default(autoincrement())
+  name      String
+  phone     String   @unique
+  email     String?
+  address   String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  orders    Order[]
+}
+
+model Order {
+  id         Int      @id @default(autoincrement())
+  orderCode  String   @unique // Định dạng: HLYYYYMMDD-XXX, vd HL20260921-003
+
+  customerId Int
+  customer   Customer @relation(fields: [customerId], references: [id])
+
+  // Snapshot thông tin khách tại thời điểm đặt (phòng khi khách đổi tên/
+  // địa chỉ ở lần mua sau, đơn hàng cũ vẫn giữ đúng thông tin lúc đặt)
+  customerName    String
+  customerPhone   String
+  customerEmail   String?
+  customerAddress String
+  note            String?
+
+  paymentMethod String // "cod" | "bank_transfer"
+  status        String @default("pending") // pending | confirmed | shipping | completed | cancelled
+  totalAmount   Int    // Tổng tiền đơn hàng (đơn vị: đồng)
+
+  items     OrderItem[]
+  createdAt DateTime    @default(now())
+  updatedAt DateTime    @updatedAt
+
+  @@index([customerId])
+  @@index([status])
+}
+
+model OrderItem {
+  id      Int   @id @default(autoincrement())
+  orderId Int
+  order   Order @relation(fields: [orderId], references: [id], onDelete: Cascade)
+
+  // Giữ tham chiếu sản phẩm gốc (có thể null nếu sản phẩm bị xoá sau này),
+  // nhưng LUÔN lưu snapshot tên/mã/ảnh/giá tại thời điểm đặt hàng bên dưới
+  // để lịch sử đơn hàng không bị sai lệch khi admin sửa/xoá sản phẩm sau đó
+  productId Int?
+  product   Product? @relation(fields: [productId], references: [id], onDelete: SetNull)
+
+  productName  String
+  productCode  String
+  productImage String?
+  price        Int // Giá tại thời điểm đặt (đơn vị: đồng)
+  quantity     Int
+
+  @@index([orderId])
 }

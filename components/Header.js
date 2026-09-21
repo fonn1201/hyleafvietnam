@@ -4,6 +4,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { useRouter, usePathname } from 'next/navigation';
+import { useCart } from './CartProvider';
 
 export default function Header() {
   const [categories, setCategories] = useState([]);
@@ -13,6 +14,7 @@ export default function Header() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const searchRef = useRef(null);
   const router = useRouter();
+  const { totalItems } = useCart();
   const pathname = usePathname();
 
   useEffect(() => {
@@ -102,13 +104,24 @@ export default function Header() {
                 className="h-12 md:h-14 w-auto object-contain transition-transform group-hover:scale-105"
               />
             </Link>
-            <button 
-              onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)} 
-              className="md:hidden p-2 text-[#FFFBF3] text-2xl focus:outline-none"
-              aria-label="Menu"
-            >
-              {isMobileMenuOpen ? '✕' : '☰'}
-            </button>
+            <div className="flex items-center gap-1">
+              <Link href="/cart" className="relative p-2 text-[#FFFBF3]" aria-label="Giỏ hàng">
+                <span className="text-2xl">🛒</span>
+                <span
+                  suppressHydrationWarning
+                  className={`absolute -top-0.5 -right-0.5 bg-amber-400 text-[#12412C] text-[11px] font-bold rounded-full w-5 h-5 items-center justify-center ${totalItems > 0 ? 'flex' : 'hidden'}`}
+                >
+                  {totalItems > 9 ? '9+' : totalItems}
+                </span>
+              </Link>
+              <button 
+                onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)} 
+                className="md:hidden p-2 text-[#FFFBF3] text-2xl focus:outline-none"
+                aria-label="Menu"
+              >
+                {isMobileMenuOpen ? '✕' : '☰'}
+              </button>
+            </div>
           </div>
 
           <div className="hidden md:flex md:col-span-3 items-center justify-between gap-4">
