@@ -2,6 +2,7 @@ import React from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { formatPrice } from '@/lib/utils';
+import AddToCartButton from './AddToCartButton';
 
 // Component hiển thị 1 khối sản phẩm trên trang chủ (VD: "Sản Phẩm Bán Chạy",
 // "Giải Pháp & Quà Tặng"). Không cần 'use client' vì không dùng state/effect
@@ -61,13 +62,14 @@ export default function ProductBlock({
                   <h3 className="font-bold text-sm line-clamp-2 leading-tight">{item.name}</h3>
                 </div>
 
-                <div className="mt-4 pt-3 border-t border-gray-100 flex items-center justify-between">
+                <div className="mt-4 pt-3 border-t border-gray-100 flex items-center justify-between gap-2">
                   <span className="text-[#D9381E] font-extrabold text-sm">
                     {formatPrice(item.price, isOnlineSales)}
                   </span>
-                  <span className="text-xs bg-[#12412C] text-[#FFFBF3] font-semibold px-2.5 py-1 rounded-lg">
-                    Chi tiết
-                  </span>
+                  <AddToCartButton
+                    product={item}
+                    className="text-xs bg-[#12412C] text-[#FFFBF3] font-semibold px-2.5 py-1.5 rounded-lg hover:bg-emerald-900 transition shrink-0"
+                  />
                 </div>
               </Link>
             ))}

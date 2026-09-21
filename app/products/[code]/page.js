@@ -3,6 +3,7 @@ import Image from "next/image";
 import { notFound } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { formatPrice } from "@/lib/utils";
+import ProductDetailActions from "@/components/ProductDetailActions";
 
 // Tìm sản phẩm theo slug trước, sau đó theo mã, cuối cùng theo id số
 // (giữ đúng logic tra cứu đang dùng ở API /api/products/[id])
@@ -119,6 +120,7 @@ export default async function ProductDetailPage({ params }) {
 
             {/* Các nút tương tác */}
             <div className="space-y-3 pt-4 border-t">
+              <ProductDetailActions product={product} isOnlineSales={isOnlineSales} />
               <a
                 href={zaloLink}
                 target="_blank"

@@ -4,6 +4,7 @@ import { formatPrice } from "@/lib/utils";
 import Image from "next/image";
 import { notFound } from "next/navigation";
 import Pagination from "@/components/Pagination";
+import AddToCartButton from "@/components/AddToCartButton";
 
 const PAGE_SIZE = 12;
 
@@ -117,16 +118,19 @@ export default async function CategoryPage({ params, searchParams }) {
                     </p>
                   )}
                 </div>
-                <div className="mt-4 flex items-center justify-between">
-                  <span className="text-base font-black text-[#12412C]">
+                <div className="mt-4 space-y-2">
+                  <span className="text-base font-black text-[#12412C] block">
                     {formatPrice(product.price, isOnlineSales)}
                   </span>
-                  <Link
-                    href={`/products/${product.slug}`}
-                    className="bg-[#12412C] text-[#FFFBF3] text-sm font-bold px-3.5 py-1.5 rounded-full hover:bg-emerald-900 transition"
-                  >
-                    Chi tiết
-                  </Link>
+                  <div className="flex items-center gap-1.5">
+                    <AddToCartButton product={product} className="flex-1 text-sm font-bold px-3 py-1.5 rounded-full bg-white text-[#12412C] border border-[#12412C]/20 hover:bg-[#12412C]/5 transition text-center" />
+                    <Link
+                      href={`/products/${product.slug}`}
+                      className="flex-1 bg-[#12412C] text-[#FFFBF3] text-sm font-bold px-3 py-1.5 rounded-full hover:bg-emerald-900 transition text-center"
+                    >
+                      Chi tiết
+                    </Link>
+                  </div>
                 </div>
               </div>
             ))}
