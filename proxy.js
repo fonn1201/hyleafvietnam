@@ -11,6 +11,8 @@ import { verifyAdminToken, hasPermission, ADMIN_COOKIE_NAME } from '@/lib/auth';
 // 'null' nghĩa là chỉ cần đăng nhập hợp lệ, không yêu cầu quyền module cụ thể.
 const PERMISSION_RULES = [
   { prefix: '/admin/products', permission: 'products' },
+  { prefix: '/admin/orders', permission: 'orders' },
+  { prefix: '/admin/customers', permission: 'orders' },
   { prefix: '/admin/slides', permission: 'slides' },
   { prefix: '/admin/categories', permission: 'categories' },
   { prefix: '/admin/posts', permission: 'posts' },
@@ -18,6 +20,8 @@ const PERMISSION_RULES = [
   { prefix: '/admin/users', permission: 'users' },
   { prefix: '/admin/settings', permission: 'settings' },
   { prefix: '/api/admin/users', permission: 'users' },
+  { prefix: '/api/admin/orders', permission: 'orders' },
+  { prefix: '/api/admin/customers', permission: 'orders' },
   { prefix: '/api/products', permission: 'products' },
   { prefix: '/api/categories', permission: 'categories' },
   { prefix: '/api/news', permission: 'news' },

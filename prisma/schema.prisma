@@ -43,11 +43,13 @@ model Setting {
   isOnlineSales Boolean  @default(false) // Tùy chọn Mở bán online
 
   // Thông tin ngân hàng nhận chuyển khoản, dùng để tạo mã QR VietQR khi
-  // khách chọn thanh toán chuyển khoản lúc đặt hàng
-  bankName          String? // Tên hiển thị, vd "MB Bank"
-  bankBin           String? // Mã BIN ngân hàng theo chuẩn VietQR/Napas, vd "970422"
-  bankAccountNumber String?
-  bankAccountHolder String? // Viết không dấu, đúng như trên tài khoản ngân hàng
+  // khách chọn thanh toán chuyển khoản lúc đặt hàng. Đặt sẵn giá trị mặc
+  // định theo thông tin chủ shop cung cấp - vẫn chỉnh sửa được ở trang
+  // Cài đặt admin bất cứ lúc nào.
+  bankName          String? @default("MB Bank")
+  bankBin           String? @default("970422") // Mã BIN theo chuẩn VietQR/Napas
+  bankAccountNumber String? @default("9363324112")
+  bankAccountHolder String? @default("NGUYEN QUOC HAO")
 
   // Danh sách trạng thái đơn hàng sẽ gửi email cho khách khi chuyển sang,
   // lưu dạng chuỗi cách nhau bằng dấu phẩy (vd: "pending,confirmed,shipping,completed,cancelled")
