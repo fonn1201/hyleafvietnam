@@ -16,10 +16,10 @@ export default async function AdminSettingsPage() {
         address: setting?.address || '',
         aboutUs: setting?.aboutUs || '',
         isOnlineSales: !!setting?.isOnlineSales,
-        bankName: setting?.bankName || '',
-        bankBin: setting?.bankBin || '',
-        bankAccountNumber: setting?.bankAccountNumber || '',
-        bankAccountHolder: setting?.bankAccountHolder || '',
+        bankName: setting?.bankName || 'MB Bank',
+        bankBin: setting?.bankBin || '970422',
+        bankAccountNumber: setting?.bankAccountNumber || '9363324112',
+        bankAccountHolder: setting?.bankAccountHolder || 'NGUYEN QUOC HAO',
         emailNotifyStatuses: setting?.emailNotifyStatuses || 'pending,confirmed,shipping,completed,cancelled',
       }}
       userPermissions={session?.permissions ?? []}
