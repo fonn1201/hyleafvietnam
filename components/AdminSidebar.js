@@ -5,6 +5,8 @@ import { useState, useEffect } from 'react';
 
 const menuItems = [
   { id: 'products', href: '/admin/products', label: '📦 Quản Lý Sản Phẩm' },
+  { id: 'orders', href: '/admin/orders', label: '🧾 Quản Lý Đơn Hàng' },
+  { id: 'orders', href: '/admin/customers', label: '👤 Khách Hàng' },
   { id: 'slides', href: '/admin/slides', label: '🖼️ Quản Lý Slide Banner' },
   { id: 'categories', href: '/admin/categories', label: '🏷️ Quản Lý Danh Mục' },
   { id: 'posts', href: '/admin/posts', label: '✍️ Quản Lý Bài Viết (Blog)' },

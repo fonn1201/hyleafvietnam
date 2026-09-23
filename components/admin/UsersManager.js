@@ -4,6 +4,7 @@ import React, { useState } from 'react';
 
 const AVAILABLE_PERMISSIONS = [
   { id: 'products', label: '📦 Quản Lý Sản Phẩm' },
+  { id: 'orders', label: '🧾 Quản Lý Đơn Hàng & Khách Hàng' },
   { id: 'slides', label: '🖼️ Quản Lý Slide Banner' },
   { id: 'categories', label: '🏷️ Quản Lý Danh Mục' },
   { id: 'posts', label: '✍️ Quản Lý Bài Viết (Blog)' },

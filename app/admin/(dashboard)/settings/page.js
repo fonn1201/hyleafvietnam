@@ -16,6 +16,11 @@ export default async function AdminSettingsPage() {
         address: setting?.address || '',
         aboutUs: setting?.aboutUs || '',
         isOnlineSales: !!setting?.isOnlineSales,
+        bankName: setting?.bankName || '',
+        bankBin: setting?.bankBin || '',
+        bankAccountNumber: setting?.bankAccountNumber || '',
+        bankAccountHolder: setting?.bankAccountHolder || '',
+        emailNotifyStatuses: setting?.emailNotifyStatuses || 'pending,confirmed,shipping,completed,cancelled',
       }}
       userPermissions={session?.permissions ?? []}
     />
