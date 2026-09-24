@@ -136,6 +136,15 @@ model Order {
   status        String @default("pending") // pending | confirmed | shipping | completed | cancelled
   totalAmount   Int    // Tổng tiền đơn hàng (đơn vị: đồng)
 
+  // Cờ xác nhận đã nhận được tiền chuyển khoản, TÁCH BIỆT với trạng thái
+  // vận đơn ở trên. Chỉ có ý nghĩa với paymentMethod = "bank_transfer"
+  // (admin tự xác nhận thủ công sau khi kiểm tra tài khoản ngân hàng).
+  // Với đơn chưa xác nhận thanh toán, KHÔNG được chuyển trạng thái vận
+  // đơn sang bất kỳ mức nào khác ngoài "pending"/"cancelled" (validate ở
+  // lib/orderStatus.js + API, xem isStatusChangeAllowed).
+  paymentConfirmed   Boolean   @default(false)
+  paymentConfirmedAt DateTime?
+
   items     OrderItem[]
   createdAt DateTime    @default(now())
   updatedAt DateTime    @updatedAt

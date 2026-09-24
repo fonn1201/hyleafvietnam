@@ -42,7 +42,7 @@ export default function ProductBlock({
           )}
 
           <div className={`grid grid-cols-2 md:grid-cols-3 gap-4 ${bannerImg ? 'lg:col-span-3' : 'lg:col-span-4'}`}>
-            {products.map((item) => (
+            {products.map((item, index) => (
               <Link
                 key={item.id}
                 href={`/products/${item.slug}`}
@@ -54,6 +54,7 @@ export default function ProductBlock({
                       src={item.image || '/placeholder.jpg'}
                       alt={item.name}
                       fill
+                      priority={index === 0}
                       sizes="(min-width: 768px) 25vw, 50vw"
                       className="object-cover group-hover:scale-105 transition duration-300"
                     />
@@ -62,14 +63,16 @@ export default function ProductBlock({
                   <h3 className="font-bold text-sm line-clamp-2 leading-tight">{item.name}</h3>
                 </div>
 
-                <div className="mt-4 pt-3 border-t border-gray-100 flex items-center justify-between gap-2">
-                  <span className="text-[#D9381E] font-extrabold text-sm">
+                <div className="mt-4 pt-3 border-t border-gray-100 space-y-2">
+                  <span className="text-[#D9381E] font-extrabold text-sm block">
                     {formatPrice(item.price, isOnlineSales)}
                   </span>
-                  <AddToCartButton
-                    product={item}
-                    className={`text-xs bg-[#12412C] text-[#FFFBF3] font-semibold px-2.5 py-1.5 rounded-lg hover:bg-emerald-900 transition shrink-0 ${isOnlineSales ? '' : 'hidden'}`}
-                  />
+                  {isOnlineSales && (
+                    <AddToCartButton
+                      product={item}
+                      className="w-full text-center text-xs bg-[#12412C] text-[#FFFBF3] font-semibold px-2.5 py-1.5 rounded-lg hover:bg-emerald-900 transition"
+                    />
+                  )}
                 </div>
               </Link>
             ))}

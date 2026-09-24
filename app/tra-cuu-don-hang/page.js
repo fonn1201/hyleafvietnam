@@ -126,9 +126,16 @@ function OrderTrackingContent() {
                 <p className="text-sm text-gray-500">Mã đơn hàng</p>
                 <p className="text-lg font-black text-[#12412C]">{order.orderCode}</p>
               </div>
-              <span className={`text-sm font-bold px-3 py-1.5 rounded-full ${isCancelled ? 'bg-red-100 text-red-700' : 'bg-emerald-100 text-emerald-700'}`}>
-                {getStatusInfo(order.status).label}
-              </span>
+              <div className="flex flex-col items-end gap-1.5">
+                <span className={`text-sm font-bold px-3 py-1.5 rounded-full ${isCancelled ? 'bg-red-100 text-red-700' : 'bg-emerald-100 text-emerald-700'}`}>
+                  {getStatusInfo(order.status).label}
+                </span>
+                {order.paymentMethod === 'bank_transfer' && order.paymentConfirmed && (
+                  <span className="text-sm font-bold px-3 py-1 rounded-full bg-blue-100 text-blue-700">
+                    💰 Đã thanh toán
+                  </span>
+                )}
+              </div>
             </div>
 
             {!isCancelled && (
@@ -148,8 +155,9 @@ function OrderTrackingContent() {
             )}
           </div>
 
-          {/* QR chuyển khoản nếu chọn bank_transfer và đơn chưa bị hủy */}
-          {order.paymentMethod === 'bank_transfer' && !isCancelled && bankInfo && (
+          {/* QR chuyển khoản: chỉ hiện khi CHƯA xác nhận đã nhận tiền -
+              admin xác nhận xong thì ẩn QR, đổi sang badge "Đã thanh toán" */}
+          {order.paymentMethod === 'bank_transfer' && !isCancelled && !order.paymentConfirmed && bankInfo && (
             <div className="bg-white rounded-2xl border border-[#12412C]/10 shadow-sm p-5 text-center">
               <h2 className="text-sm font-bold text-gray-700 uppercase mb-3">Quét mã để chuyển khoản</h2>
               <Image
@@ -158,6 +166,7 @@ function OrderTrackingContent() {
                 width={280}
                 height={380}
                 unoptimized
+                priority
                 className="mx-auto rounded-xl border"
               />
               <p className="text-sm text-gray-600 mt-3">
