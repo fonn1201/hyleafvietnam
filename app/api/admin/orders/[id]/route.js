@@ -54,6 +54,14 @@ export async function PUT(request, { params }) {
       data.customerAddress = finalAddress;
     }
 
+    if (body.customerEmail !== undefined) {
+      const trimmedEmail = body.customerEmail.trim();
+      if (trimmedEmail && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(trimmedEmail)) {
+        return NextResponse.json({ error: 'Email không hợp lệ' }, { status: 400 });
+      }
+      data.customerEmail = trimmedEmail || null;
+    }
+
     // Đổi SĐT -> liên kết lại đơn hàng với đúng hồ sơ Khách Hàng tương
     // ứng: SĐT đã có hồ sơ thì gắn vào (GIỮ NGUYÊN tên/địa chỉ hồ sơ đó,
     // không ghi đè theo đơn), SĐT chưa có thì tạo hồ sơ mới từ thông tin

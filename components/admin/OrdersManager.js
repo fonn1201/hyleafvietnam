@@ -59,6 +59,7 @@ function OrderDetailPanel({ order, onUpdated }) {
   const [editForm, setEditForm] = useState({
     customerName: order.customerName,
     customerPhone: order.customerPhone,
+    customerEmail: order.customerEmail || '',
     customerAddress: order.customerAddress,
     paymentMethod: order.paymentMethod,
   });
@@ -175,6 +176,16 @@ function OrderDetailPanel({ order, onUpdated }) {
               className="w-full border border-gray-200 rounded-lg px-2.5 py-1.5 text-sm"
             />
             <p className="text-sm text-gray-400 mt-1">Đổi SĐT sẽ tự gắn đơn sang đúng hồ sơ khách hàng tương ứng.</p>
+          </div>
+          <div>
+            <label className="block text-sm font-bold text-gray-500 mb-1">Email</label>
+            <input
+              type="email"
+              value={editForm.customerEmail}
+              onChange={(e) => setEditForm({ ...editForm, customerEmail: e.target.value })}
+              placeholder="Dùng để gửi email cập nhật đơn hàng (không bắt buộc)"
+              className="w-full border border-gray-200 rounded-lg px-2.5 py-1.5 text-sm"
+            />
           </div>
           <div>
             <label className="block text-sm font-bold text-gray-500 mb-1">Địa chỉ</label>
