@@ -4,6 +4,7 @@ import React, { useState } from 'react';
 import { validateImageFile } from '@/lib/uploadValidation';
 import Image from 'next/image';
 import WithPermission from '@/components/WithPermission';
+import RichTextEditor from './RichTextEditor';
 
 // Hàm chuẩn hóa slug tiếng Việt sạch sẽ không bị lỗi dấu gạch ngang
 function generateSlug(str) {
@@ -35,6 +36,9 @@ export default function PostsManager({ initialPosts = [], userPermissions = [] }
   };
 
   const [formData, setFormData] = useState(initialForm);
+  // TipTap không tự đồng bộ lại nội dung khi formData đổi (sửa bài khác,
+  // hoặc tạo mới sau khi vừa lưu) - tăng key này để ép editor tạo lại.
+  const [editorKey, setEditorKey] = useState(0);
 
   const refreshPosts = async () => {
     try {
@@ -80,6 +84,13 @@ export default function PostsManager({ initialPosts = [], userPermissions = [] }
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+
+    const isContentEmpty = !formData.content || formData.content.replace(/<[^>]*>/g, '').trim().length === 0;
+    if (isContentEmpty) {
+      alert('Vui lòng nhập nội dung bài viết');
+      return;
+    }
+
     setSubmitting(true);
 
     const method = formData.id ? 'PUT' : 'POST';
@@ -93,6 +104,7 @@ export default function PostsManager({ initialPosts = [], userPermissions = [] }
       if (res.ok) {
         alert(formData.id ? 'Cập nhật thành công!' : 'Tạo mới thành công!');
         setFormData(initialForm);
+        setEditorKey((k) => k + 1);
         refreshPosts();
       } else {
         alert('Có lỗi xảy ra!');
@@ -106,6 +118,7 @@ export default function PostsManager({ initialPosts = [], userPermissions = [] }
 
   const handleEdit = (item) => {
     setFormData(item);
+    setEditorKey((k) => k + 1);
   };
 
   const handleDelete = async (id) => {
@@ -192,13 +205,10 @@ export default function PostsManager({ initialPosts = [], userPermissions = [] }
 
             <div>
               <label className="block text-sm font-bold text-gray-600 mb-1">Nội Dung Bài Viết</label>
-              <textarea
-                rows={6}
-                required
-                className="w-full p-2.5 border rounded-xl text-sm"
-                placeholder="Nội dung chi tiết bài viết..."
+              <RichTextEditor
+                key={editorKey}
                 value={formData.content}
-                onChange={(e) => setFormData({ ...formData, content: e.target.value })}
+                onChange={(html) => setFormData((prev) => ({ ...prev, content: html }))}
               />
             </div>
 
@@ -223,7 +233,7 @@ export default function PostsManager({ initialPosts = [], userPermissions = [] }
               {formData.id && (
                 <button
                   type="button"
-                  onClick={() => setFormData(initialForm)}
+                  onClick={() => { setFormData(initialForm); setEditorKey((k) => k + 1); }}
                   className="bg-gray-200 text-gray-700 px-4 py-2.5 rounded-xl text-sm font-bold hover:bg-gray-300"
                 >
                   Hủy Chỉnh Sửa
