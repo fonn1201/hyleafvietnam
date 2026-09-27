@@ -44,6 +44,17 @@ export async function POST(request) {
       return NextResponse.json({ error: 'Số điện thoại không hợp lệ.' }, { status: 400 });
     }
 
+    // Giới hạn độ dài + kiểm tra định dạng cơ bản trước khi email này có
+    // thể được đưa vào nodemailer để gửi thư - phòng vệ thêm cho lỗ hổng
+    // ReDoS khi phân tích địa chỉ email (GHSA-2x7j-588g-ccc2), độc lập với
+    // việc thư viện đã được vá hay chưa.
+    const trimmedEmail = customerEmail?.trim() || '';
+    if (trimmedEmail) {
+      if (trimmedEmail.length > 254 || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(trimmedEmail)) {
+        return NextResponse.json({ error: 'Email không hợp lệ.' }, { status: 400 });
+      }
+    }
+
     if (!['cod', 'bank_transfer'].includes(paymentMethod)) {
       return NextResponse.json({ error: 'Phương thức thanh toán không hợp lệ.' }, { status: 400 });
     }
@@ -91,13 +102,13 @@ export async function POST(request) {
         where: { phone: phoneDigits },
         update: {
           name: customerName.trim(),
-          email: customerEmail?.trim() || undefined,
+          email: trimmedEmail || undefined,
           address: customerAddress.trim(),
         },
         create: {
           name: customerName.trim(),
           phone: phoneDigits,
-          email: customerEmail?.trim() || null,
+          email: trimmedEmail || null,
           address: customerAddress.trim(),
         },
       });
@@ -108,7 +119,7 @@ export async function POST(request) {
           customerId: customer.id,
           customerName: customerName.trim(),
           customerPhone: phoneDigits,
-          customerEmail: customerEmail?.trim() || null,
+          customerEmail: trimmedEmail || null,
           customerAddress: customerAddress.trim(),
           note: note?.trim() || null,
           paymentMethod,
