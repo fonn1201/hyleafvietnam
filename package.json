@@ -22,10 +22,10 @@
     "isomorphic-dompurify": "^4.3.0",
     "jsonwebtoken": "^9.0.3",
     "next": "16.3.3",
-    "nodemailer": "^9.0.6",
+    "nodemailer": "^10.0.10",
     "react": "19.2.8",
     "react-dom": "19.2.8",
-    "xlsx": "^0.18.5"
+    "xlsx": "https://cdn.sheetjs.com/xlsx-0.20.3/xlsx-0.20.3.tgz"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",
