@@ -3,8 +3,6 @@
 import React, { useCallback, useRef } from 'react';
 import { useEditor, EditorContent } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
-import Underline from '@tiptap/extension-underline';
-import Link from '@tiptap/extension-link';
 import Image from '@tiptap/extension-image';
 import { validateImageFile } from '@/lib/uploadValidation';
 
@@ -42,9 +40,8 @@ export default function RichTextEditor({ value, onChange }) {
     extensions: [
       StarterKit.configure({
         heading: { levels: [2, 3, 4] },
+        link: { openOnClick: false, autolink: true },
       }),
-      Underline,
-      Link.configure({ openOnClick: false, autolink: true }),
       Image,
     ],
     content: value || '',
