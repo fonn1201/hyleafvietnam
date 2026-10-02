@@ -38,6 +38,9 @@ export async function PUT(request) {
       bankAccountNumber: body.bankAccountNumber || null,
       bankAccountHolder: body.bankAccountHolder || null,
       emailNotifyStatuses: body.emailNotifyStatuses || 'pending,confirmed,shipping,completed,cancelled',
+      shippingEnabled: Boolean(body.shippingEnabled),
+      freeShippingThreshold: Number(body.freeShippingThreshold) || 0,
+      shippingFee: Number(body.shippingFee) || 0,
     };
 
     // Dùng upsert: Cập nhật nếu đã có id=1, nếu chưa có thì tạo mới

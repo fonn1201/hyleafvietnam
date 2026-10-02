@@ -55,6 +55,14 @@ model Setting {
   // lưu dạng chuỗi cách nhau bằng dấu phẩy (vd: "pending,confirmed,shipping,completed,cancelled")
   emailNotifyStatuses String @default("pending,confirmed,shipping,completed,cancelled")
 
+  // Cấu hình phí vận chuyển: bật/tắt tính năng, ngưỡng miễn phí ship,
+  // mức phí cố định khi chưa đạt ngưỡng. Tách hàm tính riêng ở
+  // lib/shipping.js để sau này nâng cấp lên tính theo khu vực chỉ cần
+  // sửa đúng hàm đó, không phải viết lại toàn bộ luồng checkout.
+  shippingEnabled        Boolean @default(true)
+  freeShippingThreshold  Int     @default(1000000) // Đơn từ mức này trở lên (đồng) -> miễn phí ship
+  shippingFee            Int     @default(30000) // Phí áp dụng khi đơn CHƯA đạt ngưỡng (đồng)
+
   updatedAt DateTime @updatedAt
 }
 
@@ -134,7 +142,8 @@ model Order {
 
   paymentMethod String // "cod" | "bank_transfer"
   status        String @default("pending") // pending | confirmed | shipping | completed | cancelled
-  totalAmount   Int    // Tổng tiền đơn hàng (đơn vị: đồng)
+  shippingFee   Int    @default(0) // Phí ship áp dụng cho đơn này (đồng) - snapshot tại thời điểm đặt
+  totalAmount   Int    // Tổng tiền đơn hàng = tiền hàng + shippingFee (đơn vị: đồng)
 
   // Cờ xác nhận đã nhận được tiền chuyển khoản, TÁCH BIỆT với trạng thái
   // vận đơn ở trên. Chỉ có ý nghĩa với paymentMethod = "bank_transfer"
