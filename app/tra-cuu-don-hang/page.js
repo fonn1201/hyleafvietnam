@@ -193,9 +193,21 @@ function OrderTrackingContent() {
                 </div>
               ))}
             </div>
-            <div className="border-t pt-3 mt-2 flex justify-between items-center">
-              <span className="text-sm font-bold text-gray-600">Tổng cộng</span>
-              <span className="text-lg font-black text-[#12412C]">{order.totalAmount.toLocaleString('vi-VN')} đ</span>
+            <div className="border-t pt-3 mt-2 space-y-2">
+              <div className="flex justify-between items-center text-sm text-gray-600">
+                <span>Tạm tính</span>
+                <span className="font-semibold">{(order.totalAmount - (order.shippingFee || 0)).toLocaleString('vi-VN')} đ</span>
+              </div>
+              <div className="flex justify-between items-center text-sm text-gray-600">
+                <span>Phí vận chuyển</span>
+                <span className="font-semibold">
+                  {order.shippingFee > 0 ? `${order.shippingFee.toLocaleString('vi-VN')} đ` : 'Miễn phí'}
+                </span>
+              </div>
+              <div className="flex justify-between items-center pt-2 border-t border-gray-100">
+                <span className="text-sm font-bold text-gray-600">Tổng cộng</span>
+                <span className="text-lg font-black text-[#12412C]">{order.totalAmount.toLocaleString('vi-VN')} đ</span>
+              </div>
             </div>
           </div>
 

@@ -152,6 +152,20 @@ function OrderDetailPanel({ order, onUpdated }) {
             </div>
           ))}
         </div>
+        <div className="bg-white rounded-xl p-2.5 border border-gray-100 mt-2 text-sm space-y-1">
+          <div className="flex justify-between text-gray-500">
+            <span>Tạm tính</span>
+            <span>{(order.totalAmount - (order.shippingFee || 0)).toLocaleString('vi-VN')} đ</span>
+          </div>
+          <div className="flex justify-between text-gray-500">
+            <span>Phí vận chuyển</span>
+            <span>{order.shippingFee > 0 ? `${order.shippingFee.toLocaleString('vi-VN')} đ` : 'Miễn phí'}</span>
+          </div>
+          <div className="flex justify-between font-bold text-gray-800 pt-1 border-t border-gray-100">
+            <span>Tổng cộng</span>
+            <span>{order.totalAmount.toLocaleString('vi-VN')} đ</span>
+          </div>
+        </div>
       </div>
 
       {/* Sửa thông tin đơn hàng */}

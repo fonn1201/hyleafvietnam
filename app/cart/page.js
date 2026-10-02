@@ -5,17 +5,27 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { useCart } from '@/components/CartProvider';
+import { calculateShippingFee } from '@/lib/shipping';
 
 export default function CartPage() {
   const { items, updateQuantity, removeItem, totalAmount } = useCart();
   const router = useRouter();
   const [isOnlineSales, setIsOnlineSales] = useState(null); // null = đang tải
+  const [shippingSetting, setShippingSetting] = useState(null);
 
   useEffect(() => {
     fetch('/api/settings')
       .then((r) => r.json())
-      .then((d) => setIsOnlineSales(!!d?.isOnlineSales));
+      .then((d) => {
+        setIsOnlineSales(!!d?.isOnlineSales);
+        setShippingSetting(d);
+      });
   }, []);
+
+  const { fee: shippingFee, amountToFreeShipping } = shippingSetting
+    ? calculateShippingFee(totalAmount, shippingSetting)
+    : { fee: 0, amountToFreeShipping: 0 };
+  const grandTotal = totalAmount + shippingFee;
 
   if (isOnlineSales === false) {
     return (
@@ -90,15 +100,34 @@ export default function CartPage() {
             ))}
           </div>
 
-          <div className="bg-white rounded-2xl border border-[#12412C]/10 shadow-sm p-5 flex items-center justify-between">
-            <div>
-              <p className="text-sm text-gray-500">Tổng cộng ({items.reduce((s, it) => s + it.quantity, 0)} sản phẩm)</p>
-              <p className="text-xl font-black text-[#12412C]">{totalAmount.toLocaleString('vi-VN')} đ</p>
+          {/* Gợi ý mua thêm để được miễn phí vận chuyển */}
+          {shippingSetting?.shippingEnabled && amountToFreeShipping > 0 && (
+            <div className="bg-amber-50 border border-amber-200 text-amber-800 rounded-xl p-3.5 text-sm font-semibold text-center">
+              🚚 Mua thêm {amountToFreeShipping.toLocaleString('vi-VN')} đ nữa để được <strong>miễn phí vận chuyển</strong>!
+            </div>
+          )}
+
+          <div className="bg-white rounded-2xl border border-[#12412C]/10 shadow-sm p-5 space-y-2">
+            <div className="flex items-center justify-between text-sm text-gray-600">
+              <span>Tạm tính ({items.reduce((s, it) => s + it.quantity, 0)} sản phẩm)</span>
+              <span className="font-semibold">{totalAmount.toLocaleString('vi-VN')} đ</span>
+            </div>
+            {shippingSetting?.shippingEnabled && (
+              <div className="flex items-center justify-between text-sm text-gray-600">
+                <span>Phí vận chuyển</span>
+                <span className="font-semibold">
+                  {shippingFee > 0 ? `${shippingFee.toLocaleString('vi-VN')} đ` : 'Miễn phí'}
+                </span>
+              </div>
+            )}
+            <div className="flex items-center justify-between pt-2 border-t border-gray-100">
+              <span className="text-sm font-bold text-gray-600">Tổng cộng</span>
+              <span className="text-xl font-black text-[#12412C]">{grandTotal.toLocaleString('vi-VN')} đ</span>
             </div>
             <button
               type="button"
               onClick={() => router.push('/checkout')}
-              className="bg-[#12412C] hover:bg-emerald-900 text-[#FFFBF3] font-bold px-6 py-3 rounded-full transition text-sm"
+              className="w-full bg-[#12412C] hover:bg-emerald-900 text-[#FFFBF3] font-bold px-6 py-3 rounded-full transition text-sm mt-2"
             >
               Tiến Hành Đặt Hàng →
             </button>
