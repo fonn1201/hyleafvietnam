@@ -4,6 +4,7 @@ import { generateOrderCode } from '@/lib/orderCode';
 import { checkRateLimit, getClientIp } from '@/lib/rateLimit';
 import { sendEmail } from '@/lib/mail';
 import { buildOrderConfirmationEmail } from '@/lib/orderEmails';
+import { calculateShippingFee } from '@/lib/shipping';
 
 export async function POST(request) {
   try {
@@ -92,7 +93,9 @@ export async function POST(request) {
       });
     }
 
-    const totalAmount = orderItemsData.reduce((sum, it) => sum + it.price * it.quantity, 0);
+    const subtotal = orderItemsData.reduce((sum, it) => sum + it.price * it.quantity, 0);
+    const { fee: shippingFee } = calculateShippingFee(subtotal, setting);
+    const totalAmount = subtotal + shippingFee;
     const orderCode = await generateOrderCode();
 
     // Tạo đơn hàng + trừ tồn kho trong cùng 1 transaction, tránh trường
@@ -125,6 +128,7 @@ export async function POST(request) {
           paymentMethod,
           status: 'pending',
           totalAmount,
+          shippingFee,
           items: { create: orderItemsData },
         },
         include: { items: true },

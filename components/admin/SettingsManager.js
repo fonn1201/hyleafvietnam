@@ -197,6 +197,59 @@ export default function SettingsManager({ initialSettings, userPermissions = [] 
             </div>
           </div>
 
+          {/* Cấu hình phí vận chuyển */}
+          <div className="bg-white p-6 rounded-lg shadow space-y-4">
+            <h2 className="text-base font-bold text-gray-800">Phí Vận Chuyển</h2>
+
+            <label className="flex items-center gap-3 cursor-pointer p-3 bg-gray-50 rounded border hover:bg-gray-100 transition">
+              <input
+                type="checkbox"
+                checked={formData.shippingEnabled}
+                onChange={(e) => setFormData({ ...formData, shippingEnabled: e.target.checked })}
+                className="w-5 h-5"
+              />
+              <div>
+                <span className="font-bold text-gray-800 text-sm block">Áp dụng phí vận chuyển</span>
+                <span className="text-sm text-gray-500">
+                  Tắt thì toàn bộ đơn hàng được miễn phí ship, không tính thêm gì.
+                </span>
+              </div>
+            </label>
+
+            {formData.shippingEnabled && (
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-bold mb-1">Miễn phí ship từ đơn (đồng)</label>
+                  <input
+                    type="number"
+                    min="0"
+                    step="1000"
+                    value={formData.freeShippingThreshold}
+                    onChange={(e) => setFormData({ ...formData, freeShippingThreshold: e.target.value })}
+                    className="w-full border rounded px-3 py-2 text-sm"
+                  />
+                  <p className="text-sm text-gray-400 mt-1">
+                    Đơn từ {Number(formData.freeShippingThreshold || 0).toLocaleString('vi-VN')} đ trở lên sẽ miễn phí ship.
+                  </p>
+                </div>
+                <div>
+                  <label className="block text-sm font-bold mb-1">Phí ship mặc định (đồng)</label>
+                  <input
+                    type="number"
+                    min="0"
+                    step="1000"
+                    value={formData.shippingFee}
+                    onChange={(e) => setFormData({ ...formData, shippingFee: e.target.value })}
+                    className="w-full border rounded px-3 py-2 text-sm"
+                  />
+                  <p className="text-sm text-gray-400 mt-1">
+                    Áp dụng cho đơn chưa đạt mức miễn phí ở trên.
+                  </p>
+                </div>
+              </div>
+            )}
+          </div>
+
           {/* Cấu hình gửi email theo trạng thái đơn hàng */}
           <div className="bg-white p-6 rounded-lg shadow space-y-3">
             <h2 className="text-base font-bold text-gray-800">Gửi Email Theo Trạng Thái Đơn Hàng</h2>

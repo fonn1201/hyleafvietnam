@@ -21,6 +21,9 @@ export default async function AdminSettingsPage() {
         bankAccountNumber: setting?.bankAccountNumber || '9363324112',
         bankAccountHolder: setting?.bankAccountHolder || 'NGUYEN QUOC HAO',
         emailNotifyStatuses: setting?.emailNotifyStatuses || 'pending,confirmed,shipping,completed,cancelled',
+        shippingEnabled: setting?.shippingEnabled ?? true,
+        freeShippingThreshold: setting?.freeShippingThreshold ?? 1000000,
+        shippingFee: setting?.shippingFee ?? 30000,
       }}
       userPermissions={session?.permissions ?? []}
     />

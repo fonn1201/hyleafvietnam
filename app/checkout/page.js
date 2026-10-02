@@ -5,12 +5,14 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useCart } from '@/components/CartProvider';
 import { PAYMENT_METHODS } from '@/lib/orderStatus';
+import { calculateShippingFee } from '@/lib/shipping';
 
 export default function CheckoutPage() {
   const { items, totalAmount, clearCart } = useCart();
   const router = useRouter();
 
   const [isOnlineSales, setIsOnlineSales] = useState(null);
+  const [shippingSetting, setShippingSetting] = useState(null);
   const [form, setForm] = useState({
     customerName: '',
     customerPhone: '',
@@ -26,8 +28,16 @@ export default function CheckoutPage() {
   useEffect(() => {
     fetch('/api/settings')
       .then((r) => r.json())
-      .then((d) => setIsOnlineSales(!!d?.isOnlineSales));
+      .then((d) => {
+        setIsOnlineSales(!!d?.isOnlineSales);
+        setShippingSetting(d);
+      });
   }, []);
+
+  const { fee: shippingFee } = shippingSetting
+    ? calculateShippingFee(totalAmount, shippingSetting)
+    : { fee: 0 };
+  const grandTotal = totalAmount + shippingFee;
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -202,9 +212,23 @@ export default function CheckoutPage() {
               </div>
             ))}
           </div>
-          <div className="border-t pt-3 flex justify-between items-center">
-            <span className="text-sm font-bold text-gray-600">Tổng cộng</span>
-            <span className="text-lg font-black text-[#12412C]">{totalAmount.toLocaleString('vi-VN')} đ</span>
+          <div className="border-t pt-3 space-y-2">
+            <div className="flex justify-between items-center text-sm text-gray-600">
+              <span>Tạm tính</span>
+              <span className="font-semibold">{totalAmount.toLocaleString('vi-VN')} đ</span>
+            </div>
+            {shippingSetting?.shippingEnabled && (
+              <div className="flex justify-between items-center text-sm text-gray-600">
+                <span>Phí vận chuyển</span>
+                <span className="font-semibold">
+                  {shippingFee > 0 ? `${shippingFee.toLocaleString('vi-VN')} đ` : 'Miễn phí'}
+                </span>
+              </div>
+            )}
+            <div className="flex justify-between items-center pt-2 border-t border-gray-100">
+              <span className="text-sm font-bold text-gray-600">Tổng cộng</span>
+              <span className="text-lg font-black text-[#12412C]">{grandTotal.toLocaleString('vi-VN')} đ</span>
+            </div>
           </div>
         </div>
       </div>
