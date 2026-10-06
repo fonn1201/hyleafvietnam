@@ -6,6 +6,7 @@ import { generateSlug } from '@/lib/slugify';
 import * as XLSX from 'xlsx';
 import Image from 'next/image';
 import WithPermission from '@/components/WithPermission';
+import RichTextEditor from './RichTextEditor';
 
 // Nhận dữ liệu ban đầu (sản phẩm, danh mục, quyền hạn) từ server qua props
 // -> không cần fetch lúc mount nữa, tránh lỗi ESLint "hàm được dùng trước khi
@@ -36,6 +37,10 @@ export default function ProductsManager({ initialProducts = [], initialCategorie
   };
 
   const [formData, setFormData] = useState(initialForm);
+  // TipTap không tự đồng bộ lại nội dung khi formData đổi (sửa sản
+  // phẩm khác, hoặc tạo mới sau khi vừa lưu) - tăng key này để ép
+  // editor tạo lại, giống cách đã làm ở News/PostsManager.
+  const [editorKey, setEditorKey] = useState(0);
 
   // Gọi lại API để làm mới danh sách sản phẩm SAU khi thêm/sửa/xóa/import
   // (trong callback sự kiện, không phải trong effect).
@@ -124,6 +129,7 @@ export default function ProductsManager({ initialProducts = [], initialCategorie
         alert(isEditing ? 'Cập nhật thành công!' : 'Tạo mới sản phẩm thành công!');
         setFormData(initialForm);
         setIsManualSlug(false);
+        setEditorKey((k) => k + 1);
         refreshProducts();
       } else {
         const errorData = await res.json().catch(() => ({}));
@@ -146,6 +152,7 @@ export default function ProductsManager({ initialProducts = [], initialCategorie
       slug: item.slug || '',
       categoryIds: catIds,
     });
+    setEditorKey((k) => k + 1);
   };
 
   const handleDelete = async (id) => {
@@ -411,12 +418,10 @@ export default function ProductsManager({ initialProducts = [], initialCategorie
 
             <div>
               <label className="block text-sm font-bold text-gray-600 mb-1">Mô Tả Chi Tiết</label>
-              <textarea
-                rows={4}
-                className="w-full p-2.5 border rounded-xl text-sm"
-                placeholder="Thông tin thành phần, hương vị..."
+              <RichTextEditor
+                key={editorKey}
                 value={formData.description || ''}
-                onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                onChange={(html) => setFormData((prev) => ({ ...prev, description: html }))}
               />
             </div>
 
@@ -463,6 +468,7 @@ export default function ProductsManager({ initialProducts = [], initialCategorie
                   onClick={() => {
                     setFormData(initialForm);
                     setIsManualSlug(false);
+                    setEditorKey((k) => k + 1);
                   }}
                   className="bg-gray-200 text-gray-700 px-4 py-2.5 rounded-xl text-sm font-bold hover:bg-gray-300"
                 >

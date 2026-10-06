@@ -4,7 +4,7 @@ import { usePathname } from 'next/navigation';
 import Header from './Header';
 import Footer from './Footer';
 
-export default function NavbarFooterLayout({ children }) {
+export default function NavbarFooterLayout({ children, settings, categories }) {
   const pathname = usePathname();
   const isAdmin = pathname?.startsWith('/admin');
 
@@ -14,9 +14,9 @@ export default function NavbarFooterLayout({ children }) {
 
   return (
     <div className="flex flex-col min-h-screen">
-      <Header />
+      <Header initialSettings={settings} initialCategories={categories} />
       <main className="flex-1">{children}</main>
-      <Footer />
+      <Footer settings={settings} />
     </div>
   );
 }

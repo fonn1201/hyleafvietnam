@@ -6,9 +6,12 @@ import Image from 'next/image';
 import { useRouter, usePathname } from 'next/navigation';
 import { useCart } from './CartProvider';
 
-export default function Header() {
-  const [categories, setCategories] = useState([]);
-  const [isOnlineSales, setIsOnlineSales] = useState(false);
+export default function Header({ initialSettings, initialCategories }) {
+  // Nhận sẵn từ server (app/layout.js) qua props - không còn phải tự
+  // fetch phía client, tránh "nháy" dữ liệu rỗng/sai trong lúc chờ tải.
+  const categories = initialCategories || [];
+  const isOnlineSales = !!initialSettings?.isOnlineSales;
+  const zaloUrl = initialSettings?.zaloUrl || 'https://zalo.me';
   const [searchQuery, setSearchQuery] = useState('');
   const [suggestions, setSuggestions] = useState([]);
   const [isOpen, setIsOpen] = useState(false);
@@ -17,21 +20,6 @@ export default function Header() {
   const router = useRouter();
   const { totalItems } = useCart();
   const pathname = usePathname();
-
-  useEffect(() => {
-    fetch('/api/categories')
-      .then((r) => r.json())
-      .then((d) => Array.isArray(d) && setCategories(d));
-  }, []);
-
-  // Chỉ hiện icon giỏ hàng khi shop đang bật "Mở bán online" (cài đặt
-  // chung) — tắt thì giỏ hàng/đặt hàng không có ý nghĩa, giữ đồng bộ với
-  // việc giá sản phẩm cũng đang hiện "Liên hệ" thay vì giá thật.
-  useEffect(() => {
-    fetch('/api/settings')
-      .then((r) => r.json())
-      .then((d) => setIsOnlineSales(!!d?.isOnlineSales));
-  }, []);
 
   // Tự động xóa trắng từ khóa, đóng gợi ý và đóng menu mobile mỗi khi chuyển trang.
   // Dùng pattern "điều chỉnh state khi prop thay đổi" ngay trong lúc render
@@ -255,7 +243,7 @@ export default function Header() {
             <Link href="/posts" className="text-sm font-bold uppercase py-1 hover:text-amber-200">Góc Thưởng Trà</Link>
             <Link href="/#about" className="text-sm font-bold uppercase py-1 hover:text-amber-200">Giới Thiệu</Link>
 
-            <a href="https://zalo.me" target="_blank" rel="noreferrer" className="bg-[#FFFBF3] text-[#12412C] font-bold text-sm px-4 py-2.5 rounded-full text-center shadow mt-1">
+            <a href={zaloUrl} target="_blank" rel="noreferrer" className="bg-[#FFFBF3] text-[#12412C] font-bold text-sm px-4 py-2.5 rounded-full text-center shadow mt-1">
               💬 Chat Zalo
             </a>
           </div>
