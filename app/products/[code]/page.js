@@ -3,6 +3,7 @@ import Image from "next/image";
 import { notFound } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { formatPrice } from "@/lib/utils";
+import { sanitizeHtml } from "@/lib/sanitize";
 import ProductDetailActions from "@/components/ProductDetailActions";
 
 // Tìm sản phẩm theo slug trước, sau đó theo mã, cuối cùng theo id số
@@ -42,9 +43,15 @@ export async function generateMetadata({ params }) {
     return { title: "Không tìm thấy sản phẩm | Hyleaf" };
   }
 
+  // Mô tả giờ là HTML (rich text) -> bỏ thẻ để lấy chữ thuần cho thẻ
+  // meta description, tránh lộ mã HTML ra kết quả tìm kiếm Google
+  const plainDescription = product.description
+    ? product.description.replace(/<[^>]*>/g, '').trim()
+    : '';
+
   return {
     title: `${product.name} | Hyleaf Trà Oolong`,
-    description: product.description || `Mua ${product.name} chính hãng tại Hyleaf.`,
+    description: plainDescription || `Mua ${product.name} chính hãng tại Hyleaf.`,
   };
 }
 
@@ -65,6 +72,8 @@ export default async function ProductDetailPage({ params }) {
     `Chào shop, tôi muốn hỏi mua sản phẩm: ${product.name} (Mã: ${product.code})`
   );
   const zaloLink = `https://zalo.me/${cleanPhone}?text=${zaloMessage}`;
+
+  const hasDescription = product.description && product.description.replace(/<[^>]*>/g, '').trim().length > 0;
 
   return (
     <div className="min-h-screen bg-gray-50 text-gray-800 font-sans pb-12">
@@ -109,32 +118,47 @@ export default async function ProductDetailPage({ params }) {
                 </span>
               </div>
 
-              {/* Mô tả chi tiết sản phẩm */}
+              {/* Mô tả chi tiết sản phẩm - nội dung rich text (HTML), làm
+                  sạch (sanitize) trước khi render vì hiển thị công khai */}
               <div className="mb-6">
                 <h3 className="text-base font-bold text-gray-900 uppercase tracking-wider mb-2 border-b pb-1">Mô tả sản phẩm</h3>
-                <p className="text-sm text-gray-600 leading-relaxed whitespace-pre-line">
-                  {product.description || "Chưa có thông tin mô tả chi tiết cho sản phẩm này."}
-                </p>
+                {hasDescription ? (
+                  <div
+                    className="prose prose-sm max-w-none text-gray-600"
+                    dangerouslySetInnerHTML={{ __html: sanitizeHtml(product.description) }}
+                  />
+                ) : (
+                  <p className="text-sm text-gray-600 leading-relaxed">
+                    Chưa có thông tin mô tả chi tiết cho sản phẩm này.
+                  </p>
+                )}
               </div>
             </div>
 
-            {/* Các nút tương tác */}
+            {/* Các nút tương tác: khi đang mở bán online, giỏ hàng là hành
+                động chính, Zalo chỉ còn 1 dòng liên hệ nhỏ bên dưới (bớt
+                dư thừa nhiều nút cùng lúc). Khi tắt mở bán online, Zalo
+                là cách đặt hàng duy nhất nên vẫn giữ dạng nút to. Đã bỏ
+                hẳn nút gọi Hotline theo yêu cầu, chỉ còn Zalo. */}
             <div className="space-y-3 pt-4 border-t">
               <ProductDetailActions product={product} isOnlineSales={isOnlineSales} />
-              <a
-                href={zaloLink}
-                target="_blank"
-                rel="noreferrer"
-                className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3.5 rounded-xl text-center block shadow-md transition"
-              >
-                💬 Nhắn Zalo Đặt Hàng Ngay
-              </a>
-              <a
-                href={`tel:${hotline}`}
-                className="w-full bg-gray-100 hover:bg-gray-200 text-gray-800 font-bold py-3 rounded-xl text-center block transition text-sm"
-              >
-                📞 Gọi Hotline: {hotline}
-              </a>
+              {isOnlineSales ? (
+                <p className="text-center text-sm text-gray-500">
+                  Cần tư vấn thêm?{' '}
+                  <a href={zaloLink} target="_blank" rel="noreferrer" className="text-blue-600 font-bold hover:underline">
+                    Nhắn Zalo
+                  </a>
+                </p>
+              ) : (
+                <a
+                  href={zaloLink}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3.5 rounded-xl text-center block shadow-md transition"
+                >
+                  💬 Nhắn Zalo Đặt Hàng Ngay
+                </a>
+              )}
             </div>
           </div>
         </div>
