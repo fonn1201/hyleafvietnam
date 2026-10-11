@@ -144,11 +144,13 @@ export default function ProfileManager({ initialProfile = { name: '', email: '' 
             </div>
 
             <div>
-              <label className="block text-sm font-bold text-gray-600 uppercase mb-1">Mật Khẩu Mới</label>
+              <label className="block text-sm font-bold text-gray-600 uppercase mb-1">Mật Khẩu Mới (tối thiểu 8 ký tự)</label>
               <input
                 type="password"
                 required
                 placeholder="••••••••"
+                minLength={8}
+                maxLength={72}
                 value={passData.newPassword}
                 onChange={(e) => setPassData({ ...passData, newPassword: e.target.value })}
                 className="w-full border border-gray-200 rounded-xl px-3.5 py-2.5 text-sm focus:outline-none focus:border-blue-500"

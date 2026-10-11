@@ -20,6 +20,22 @@ export async function PUT(request) {
       return NextResponse.json({ error: 'Vui lòng điền đầy đủ mật khẩu cũ và mới!' }, { status: 400 });
     }
 
+    if (typeof oldPassword !== 'string' || typeof newPassword !== 'string') {
+      return NextResponse.json({ error: 'Dữ liệu không hợp lệ!' }, { status: 400 });
+    }
+
+    // Mật khẩu mới tối thiểu 8 ký tự; tối đa 72 vì bcrypt chỉ xét 72 byte
+    // đầu, quá dài sẽ bị cắt ngầm mà người dùng không biết.
+    if (newPassword.length < 8) {
+      return NextResponse.json({ error: 'Mật khẩu mới phải có ít nhất 8 ký tự!' }, { status: 400 });
+    }
+    if (newPassword.length > 72) {
+      return NextResponse.json({ error: 'Mật khẩu mới tối đa 72 ký tự!' }, { status: 400 });
+    }
+    if (newPassword === oldPassword) {
+      return NextResponse.json({ error: 'Mật khẩu mới phải khác mật khẩu cũ!' }, { status: 400 });
+    }
+
     // Chỉ tìm đúng tài khoản đang đăng nhập theo id đã xác thực trong JWT
     const user = await prisma.user.findUnique({ where: { id: session.id } });
 

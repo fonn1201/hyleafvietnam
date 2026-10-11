@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import bcrypt from 'bcryptjs';
 import prisma from '@/lib/prisma';
 import { sendEmail } from '@/lib/mail';
+import { generateTempPassword } from '@/lib/password';
 
 // 1. Lấy danh sách users (Chuyển đổi string permissions trong DB thành Array cho phía client)
 export async function GET() {
@@ -56,7 +57,7 @@ export async function POST(req) {
       return NextResponse.json({ error: 'Email này đã tồn tại trong hệ thống!' }, { status: 400 });
     }
 
-    const randomPassword = Math.random().toString(36).slice(-8);
+    const randomPassword = generateTempPassword();
     const hashedPassword = await bcrypt.hash(randomPassword, 10);
 
     // Chuyển mảng quyền nhận từ giao diện thành chuỗi phân tách bằng dấu phẩy để khớp với kiểu String của Prisma

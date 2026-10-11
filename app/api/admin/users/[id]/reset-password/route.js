@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import bcrypt from 'bcryptjs';
 import { sendEmail } from '@/lib/mail';
+import { generateTempPassword } from '@/lib/password';
 
 export async function POST(request, { params }) {
   try {
@@ -13,7 +14,7 @@ export async function POST(request, { params }) {
       return NextResponse.json({ error: 'Không tìm thấy tài khoản!' }, { status: 404 });
     }
 
-    const newPassword = Math.random().toString(36).slice(-8) + Math.floor(1000 + Math.random() * 9000);
+    const newPassword = generateTempPassword();
     const hashedPassword = await bcrypt.hash(newPassword, 10);
 
     await prisma.user.update({
