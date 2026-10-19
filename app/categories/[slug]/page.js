@@ -1,6 +1,6 @@
 import { prisma } from "@/lib/prisma";
 import Link from "next/link";
-import { formatPrice } from "@/lib/utils";
+import { formatPrice, stripHtml } from "@/lib/utils";
 import Image from "next/image";
 import { notFound } from "next/navigation";
 import Pagination from "@/components/Pagination";
@@ -112,9 +112,9 @@ export default async function CategoryPage({ params, searchParams }) {
                   <h3 className="font-bold text-base text-gray-800 line-clamp-2 mb-1">
                     {product.name}
                   </h3>
-                  {product.description && (
+                  {stripHtml(product.description) && (
                     <p className="text-sm text-gray-500 line-clamp-2">
-                      {product.description}
+                      {stripHtml(product.description)}
                     </p>
                   )}
                 </div>
