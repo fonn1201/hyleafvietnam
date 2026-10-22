@@ -5,6 +5,8 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { useRouter, usePathname } from 'next/navigation';
 import { useCart } from './CartProvider';
+import { fetchProductSuggestions } from '@/lib/searchClient';
+import { formatPrice } from '@/lib/utils';
 
 export default function Header({ initialSettings, initialCategories }) {
   // Nhận sẵn từ server (app/layout.js) qua props - không còn phải tự
@@ -47,12 +49,8 @@ export default function Header({ initialSettings, initialCategories }) {
       }
 
       try {
-        const res = await fetch(
-          `/api/products?search=${encodeURIComponent(searchQuery.trim())}&limit=6`,
-          { signal: controller.signal }
-        );
-        const products = await res.json();
-        setSuggestions(Array.isArray(products) ? products : []);
+        const products = await fetchProductSuggestions(searchQuery.trim(), controller.signal);
+        setSuggestions(products);
         setIsOpen(true);
       } catch (error) {
         if (error.name !== 'AbortError') {
@@ -182,7 +180,7 @@ export default function Header({ initialSettings, initialCategories }) {
                       <div className="min-w-0 flex-1">
                         <p className="text-sm font-bold text-[#12412C] truncate">{product.name}</p>
                         <p className="text-xs text-amber-800 font-semibold">
-                          Mã: {product.code} - {Number(product.price).toLocaleString('vi-VN')} đ
+                          Mã: {product.code} - {formatPrice(product.price, isOnlineSales)}
                         </p>
                       </div>
                     </Link>
