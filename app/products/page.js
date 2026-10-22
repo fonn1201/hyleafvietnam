@@ -1,7 +1,7 @@
 import { prisma } from "@/lib/prisma";
 import Link from "next/link";
 import Image from "next/image";
-import { formatPrice } from "@/lib/utils";
+import { formatPrice, stripHtml } from "@/lib/utils";
 import Pagination from "@/components/Pagination";
 import AddToCartButton from "@/components/AddToCartButton";
 
@@ -136,9 +136,9 @@ export default async function ProductsPage({ searchParams }) {
                   <h3 className="font-bold text-base text-gray-800 line-clamp-2 mb-1">
                     {product.name}
                   </h3>
-                  {product.description && (
+                  {stripHtml(product.description) && (
                     <p className="text-sm text-gray-500 line-clamp-2">
-                      {product.description}
+                      {stripHtml(product.description)}
                     </p>
                   )}
                 </div>

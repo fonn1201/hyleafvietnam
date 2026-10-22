@@ -2,7 +2,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { notFound } from "next/navigation";
 import { prisma } from "@/lib/prisma";
-import { formatPrice } from "@/lib/utils";
+import { formatPrice, stripHtml } from "@/lib/utils";
 import { sanitizeHtml } from "@/lib/sanitize";
 import ProductDetailActions from "@/components/ProductDetailActions";
 
@@ -45,9 +45,7 @@ export async function generateMetadata({ params }) {
 
   // Mô tả giờ là HTML (rich text) -> bỏ thẻ để lấy chữ thuần cho thẻ
   // meta description, tránh lộ mã HTML ra kết quả tìm kiếm Google
-  const plainDescription = product.description
-    ? product.description.replace(/<[^>]*>/g, '').trim()
-    : '';
+  const plainDescription = stripHtml(product.description);
 
   return {
     title: `${product.name} | Hyleaf Trà Oolong`,
@@ -73,7 +71,7 @@ export default async function ProductDetailPage({ params }) {
   );
   const zaloLink = `https://zalo.me/${cleanPhone}?text=${zaloMessage}`;
 
-  const hasDescription = product.description && product.description.replace(/<[^>]*>/g, '').trim().length > 0;
+  const hasDescription = stripHtml(product.description).length > 0;
 
   return (
     <div className="min-h-screen bg-gray-50 text-gray-800 font-sans pb-12">
