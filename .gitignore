@@ -48,3 +48,6 @@ next-env.d.ts
 /prisma/*.db-journal
 *.sqlite
 *.sqlite3
+
+# thư mục build tạm của bản tĩnh (npm run build:static)
+/.static-build/
