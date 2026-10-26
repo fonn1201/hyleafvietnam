@@ -107,6 +107,13 @@ applyTemplate('category-page.js', 'app/categories/[slug]/page.js', { mustExist: 
 applyTemplate('StaticProductGrid.js', 'components/StaticProductGrid.js', { mustExist: false });
 applyTemplate(path.join('search-index', 'route.js'), 'app/search-index.json/route.js', { mustExist: false });
 
+// robots.txt và sitemap.xml: khi xuất bản tĩnh phải khai báo rõ là nội dung tĩnh
+for (const file of ['app/robots.js', 'app/sitemap.js']) {
+  const full = path.join(TMP, file);
+  if (!fs.existsSync(full)) fail(`Không thấy "${file}" để khai báo xuất tĩnh.`);
+  fs.appendFileSync(full, "\n\n// Thêm tự động bởi build tĩnh\nexport const dynamic = 'force-static';\n");
+}
+
 // Các trang chi tiết cần khai báo trước danh sách đường dẫn (generateStaticParams)
 const DYNAMIC_PAGES = [
   { file: 'app/products/[code]/page.js', model: 'product', where: '{ isVisible: true }', param: 'code' },
