@@ -37,7 +37,10 @@ export default function Footer({ settings }) {
             <li><Link href="/" className="hover:text-white transition">Trang Chủ</Link></li>
             <li><Link href="/products" className="hover:text-white transition">Tất Cả Sản Phẩm</Link></li>
             <li><Link href="/posts" className="hover:text-white transition">Tin Tức & Kinh Nghiệm</Link></li>
-            <li><Link href="/tra-cuu-don-hang" className="hover:text-white transition">Tra Cứu Đơn Hàng</Link></li>
+            {/* Chỉ có ý nghĩa khi shop đang bán online (có đơn hàng để tra cứu) */}
+            {settings?.isOnlineSales && (
+              <li><Link href="/tra-cuu-don-hang" className="hover:text-white transition">Tra Cứu Đơn Hàng</Link></li>
+            )}
           </ul>
         </div>
         <div>
